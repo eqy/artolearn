@@ -286,7 +286,8 @@ class VideoParser(object):
 
     def savegame(self):
         def aggregate(values):
-            temp = max(set(values), key=lambda item: values.count(item)*item is not None)
+            temp = max(set(values), key=lambda item: values.count(item) if item is not None else 0)
+            return temp
             
         if self.last_match_time is None:
             print("no game to save, done!")
@@ -338,7 +339,7 @@ class VideoParser(object):
             else:
                 player_results = player_b_result + player_a_result
             game_data = player_results + (map_result, tr_result, lat_result, outcome_result)
-        print(game_data) 
+            print(game_data) 
         self.cleargame()
 
     def step(self, frame, time):
@@ -351,8 +352,9 @@ class VideoParser(object):
         if sim < self.UNKNOWN_THRESHOLD:
             self.unknown_count += 1
         elif 'match' in frametype:
+            if not self.poi or (time - self.poi > self.POI_INTERVAL):
+                print(frametype, time)
             self.poi = time
-            print(frametype, time)
             if self.last_match_time is None:
                 self.last_match_time = time
             elif (time - self.last_match_time) > self.MATCH_TIMEOUT:
