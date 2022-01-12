@@ -27,39 +27,6 @@ def threshold(img, boundary=56):
     res = cv.threshold(cv.cvtColor(img, cv.COLOR_BGR2GRAY), boundary, 255, cv.THRESH_BINARY_INV)[1]
     return res
 
-# currently unused
-def numeric_substitutions(s):
-    s = s.lower()
-    s.replace('s', '5')
-    s.replace('b', '8')
-    s.replace('z', '2')
-    s.replace('i', '1')
-    s.replace('a', '4')
-    s.replace('o', '0')
-    return s
-
-# currently unused
-def parse_matchtext(player_text):
-    # heuristic value to rank the plausibility of OCR'd MMR values, currently unused
-    STANDARD_MMR = 2000
-    name = None
-    mmr = None
-    possible_id = False
-    for line in player_text:
-        if line != '':
-            if name is None:
-                name = line
-            else:
-                line = numeric_substitutions(line)
-                curr_mmr = re.sub('[^0-9]','', line)
-                if curr_mmr != '':
-                    curr_mmr = int(curr_mmr)
-                    if mmr is None:
-                        mmr = curr_mmr
-                    elif abs(curr_mmr - STANDARD_MMR) < abs(mmr - STANDARD_MMR):
-                        mmr = curr_mmr
-    return name, mmr
-
 def grab_likely_rank(player_crop):
     #A: red, B: purple, S: yellow
     RANGES = {'A': (0, 15), 'B': (140, 160), 'S': (25, 35)}
@@ -78,26 +45,49 @@ def grab_likely_rank(player_crop):
     # couldn't match any colors
     return None
 
-# TODO: binary valid/invalid instead of guessing
-def guess_mmr(player_mmr, player_rank):
-    RANK_MSDS = {'A': 2000, 'B': 1000, 'S': 2000}
-    RANK_MSD2S = {'A': 2100, 'B': 1900, 'S': 2300}
-    # sanity check MMRs
-    RANK_MAXES = {'A': 2350, 'B': 2200, 'S': 9999}
-    RANK_MINS = {'A': 1900, 'B': 1650, 'S': 2150}
-    if player_mmr is not None:
-        if player_rank in RANK_MSD2S and player_mmr < 100:
-            player_mmr += RANK_MSD2S[player_rank]
-        elif player_rank in RANK_MSDS and player_mmr < 1000:
-            player_mmr += RANK_MSDS[player_rank]
-        elif player_rank in RANK_MSDS and player_mmr > RANK_MAXES[player_rank]:
-            player_mmr = (player_mmr % 1000) + RANK_MSDS[player_rank]
-        if player_rank in RANK_MAXES:
-            if player_mmr > RANK_MAXES[player_rank]:
-                player_mmr = None
-            elif player_mmr < RANK_MINS[player_rank]:
-                player_mmr = None
-    return player_mmr
+def plausible_mmr(player_mmr, player_rank):
+    RANK_RANGES = {'A': (2050, 2300), 'B': (1700, 2100), 'S': (2200, 3000)}
+    if player_mmr is None:
+        return False
+    if player_rank is None: # LOL
+        return player_mmr > 1600 and player_mmr < 3001
+    return player_mmr >= RANK_RANGES[player_rank][0] and player_mmr <= RANK_RANGES[player_rank][1]
+
+class Canonicalizer(object):
+    def __init__(self, patterns):
+        self.patterns = patterns
+        self.values = set()
+        for key in self.patterns:
+            self.values.add(self.patterns[key])
+
+    def canonicalize(self, string):
+        lower = string.lower()
+        for key in self.patterns:
+            if key in lower:
+                return self.patterns[key]
+        return string
+
+    def matched(self, string):
+        return string in self.values
+        
+
+NAME_PATTERNS = {'artosis': 'artosis',
+                 'arto': 'artosis',
+                 'valks': 'artosis',
+                 'canadadry': 'artosis',
+                 'artasis': 'artosis'}
+
+MAP_PATTERNS = {'poly': 'polypoid',
+                'polypoid': 'polypoid',
+                'potypoid': 'polypoid',
+                'clipse': 'eclipse',
+                'eclipse': 'eclipse',
+                'good': 'goodnight',
+                'good night': 'goodnight',
+                'largo': 'largo'}
+
+name_canonicalizer = Canonicalizer(NAME_PATTERNS)
+map_canonicalizer = Canonicalizer(MAP_PATTERNS)
 
 def grab_matchdata2(frame, player_a_race, player_b_race, debug=False):
     global DEBUG_ITER
@@ -119,6 +109,7 @@ def grab_matchdata2(frame, player_a_race, player_b_race, debug=False):
         map_name_crop = map_name_crop * (mask == 255)
         map_name_threshold = threshold(map_name_crop, MAP_THRESHOLD)
         map_text = pytesseract.image_to_string(map_name_threshold, config='--psm 7').strip()
+        map_text = map_canonicalizer.canonicalize(map_text)
         if debug:
             cv.imwrite(f'2{DEBUG_ITER}mask.png', mask)
             cv.imwrite(f'2{DEBUG_ITER}mapcrop.png', map_name_crop)
@@ -133,10 +124,11 @@ def grab_matchdata2(frame, player_a_race, player_b_race, debug=False):
         player_mmr_threshold = threshold(player_mmr_crop, MMR_THRESHOLD)
         player_name_text = pytesseract.image_to_string(player_name_threshold, config='--psm 7')
         player_mmr_text = pytesseract.image_to_string(player_mmr_threshold, config='--psm 7 -c tessedit_char_whitelist=0123456789')
-        player_name = player_name_text.strip()
+        player_name = name_canonicalizer.canonicalize(player_name_text.strip())
         player_rank = grab_likely_rank(player_mmr_crop)
         player_mmr = re.sub('[^0-9]','', player_mmr_text)
         player_mmr = int(player_mmr) if len(player_mmr) else None
+        player_mmr = player_mmr if plausible_mmr(player_mmr, player_rank) else None
 
         if debug:
             cv.imwrite(f'2{DEBUG_ITER}aname.png', player_name_threshold)
@@ -165,8 +157,6 @@ def grab_matchdata2(frame, player_a_race, player_b_race, debug=False):
              'canadadry',
              'artasis'] # lol, OCR sucks
 
-    height = frame.shape[0]
-    width = frame.shape[1]
     map_name_crop = crop(frame, *MAP_BBOX)
     map_text = grab_mapdata(map_name_crop)
     player_a_data = grab_playerdata(crop(frame, *PLAYER_A_NAME_BBOX),
@@ -177,44 +167,10 @@ def grab_matchdata2(frame, player_a_race, player_b_race, debug=False):
                                     player_b_race)
     return map_text, player_a_data, player_b_data
 
-def grab_matchdata(frame, player_a_race, player_b_race, debug=False):
-    global DEBUG_ITER
-    BBOX_HEIGHT = 56
-    BBOX_WIDTH = 232
-    PLAYER_A_BBOX = (764/1080, 408/1920, (764+BBOX_HEIGHT)/1080, (408+BBOX_WIDTH)/1920)
-    PLAYER_B_BBOX = (764/1080, 1293/1920, (764+BBOX_HEIGHT)/1080, (1293+BBOX_WIDTH)/1920)
-
-    NAMES = ['artosis', 'newgear', 'valks', 'canadadry']
-    height = frame.shape[0]
-    width = frame.shape[1]
-    player_a_crop = crop(frame, *PLAYER_A_BBOX)
-    player_b_crop = crop(frame, *PLAYER_B_BBOX)
-    player_a_threshold = threshold(player_a_crop)
-    player_b_threshold = threshold(player_b_crop)
-    if debug:
-        cv.imwrite(f'a{DEBUG_ITER}.png', player_a_threshold)    
-        cv.imwrite(f'b{DEBUG_ITER}.png', player_b_threshold)
-        DEBUG_ITER += 1
-    player_a_text = pytesseract.image_to_string(player_a_threshold).splitlines()
-    player_b_text = pytesseract.image_to_string(player_b_threshold).splitlines()
-    # guess rank based on color
-    player_a_rank = grab_likely_rank(player_a_crop)
-    player_b_rank = grab_likely_rank(player_b_crop)
-    player_a_name, player_a_mmr = parse_matchtext(player_a_text)
-    player_b_name, player_b_mmr = parse_matchtext(player_b_text)
-    player_a_mmr = guess_mmr(player_a_mmr, player_a_rank)
-    player_b_mmr = guess_mmr(player_b_mmr, player_b_rank)
-
-    player_a_data = (player_a_name, player_a_rank, player_a_mmr, player_a_race)
-    player_b_data = (player_b_name, player_b_rank, player_b_mmr, player_b_race)
-    return player_a_data, player_b_data
-
 def grab_pointsdata(frame):
     POINTS_BBOX_HEIGHT = 57
     POINTS_BBOX_WIDTH = 317
     POINTS_BBOX = (44/1080, 799/1920, (44+POINTS_BBOX_HEIGHT)/1080, (799+POINTS_BBOX_WIDTH)/1920)
-    height = frame.shape[0]
-    width = frame.shape[1]
     points_crop = crop(frame, *POINTS_BBOX)
     points_threshold = threshold(points_crop, boundary=128)
     text = pytesseract.image_to_string(points_threshold, config='--psm 7')
@@ -229,8 +185,6 @@ def grab_postgamedata(frame):
     POSTGAME_BBOX_HEIGHT = 46
     POSTGAME_BBOX_WIDTH = 183
     POSTGAME_BBOX = (45/1080, 412/1920, (45+POSTGAME_BBOX_HEIGHT)/1080, (412+POSTGAME_BBOX_WIDTH)/1920)
-    height = frame.shape[0]
-    width = frame.shape[1]
     postgame_crop = crop(frame, *POSTGAME_BBOX)
     postgame_threshold = threshold(postgame_crop)
     text = pytesseract.image_to_string(postgame_threshold, config='--psm 7')
@@ -248,8 +202,6 @@ def grab_turnrate(frame, debug=False):
     TURNRATE_BBOX_WIDTH = 131
     TURNRATE_BBOX = (23/1080, 20/1920, (23+TURNRATE_BBOX_HEIGHT)/1080, (20+TURNRATE_BBOX_WIDTH)/1920)
     THRESHOLD = 128
-    height = frame.shape[0]
-    width = frame.shape[1]
     turnrate_crop = crop(frame, *TURNRATE_BBOX)
     turnrate_threshold = threshold(turnrate_crop, THRESHOLD)
 
@@ -333,6 +285,9 @@ class VideoParser(object):
         self.gameframe = False
 
     def savegame(self):
+        def aggregate(values):
+            temp = max(set(values), key=lambda item: values.count(item)*item is not None)
+            
         if self.last_match_time is None:
             print("no game to save, done!")
             assert len(self.matchframes) == 0
@@ -353,14 +308,37 @@ class VideoParser(object):
         map_results = [match_result[0] for match_result in match_results]
         player_results = [(match_result[1], match_result[2]) for match_result in match_results]
         player_a_results, player_b_results = zip(*player_results)
-        print(map_results)
         print(len(match_results), len(self.matchframes))
-        print(player_a_results)
-        print(player_b_results)
+        map_result = aggregate(map_results)
+        player_a_names, player_a_ranks, player_a_mmrs, player_a_races = zip(*player_a_results)
+        player_b_names, player_b_ranks, player_b_mmrs, player_b_races = zip(*player_b_results)
+        player_a_results = (player_a_names, player_a_ranks, player_a_mmrs, player_a_races)
+        player_b_results = (player_b_names, player_b_ranks, player_b_mmrs, player_b_races)
+        player_a_result = tuple(aggregate(result) for result in player_a_results)
+        player_b_result = tuple(aggregate(result) for result in player_b_results)
+        player_a_artosis = name_canonicalizer.matched(player_a_result[0])
+        player_b_artosis = name_canonicalizer.matched(player_b_result[0])
         turnrate_results = [grab_turnrate(game_frame) for game_frame in self.gameframes]
         trs, lats = zip(*turnrate_results)
-        print(outcome_results)
-        print(turnrate_results)
+        tr_result = aggregate(trs)
+        lat_result = aggregate(lats)
+        outcome_result = aggregate(outcome_results)
+        print(tr_result, lat_result)
+
+
+        if not(player_a_artosis) and not(player_b_artosis):
+            print(f"WARNING: unable to find artosis in: {player_a_result[0]}, {player_b_result[0]}, skipping...")
+        elif player_a_artosis and player_b_artosis:
+            print("WARNING: double artosis, skipping...")
+        else:
+            if not map_canonicalizer.matched(map_result):
+                print(f"WARNING: unable to match map: {map_result}")
+            if player_a_artosis:
+                player_results = player_a_result + player_b_result
+            else:
+                player_results = player_b_result + player_a_result
+            game_data = player_results + (map_result, tr_result, lat_result, outcome_result)
+        print(game_data) 
         self.cleargame()
 
     def step(self, frame, time):
