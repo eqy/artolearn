@@ -89,7 +89,7 @@ MAP_PATTERNS = {'poly': 'polypoid',
 name_canonicalizer = Canonicalizer(NAME_PATTERNS)
 map_canonicalizer = Canonicalizer(MAP_PATTERNS)
 
-def grab_matchdata2(frame, player_a_race, player_b_race, debug=False):
+def grab_matchdata2(frame, player_a_race, player_b_race, debug=False, online_debug=True):
     global DEBUG_ITER
     
     def grab_mapdata(map_name_crop):
@@ -110,6 +110,9 @@ def grab_matchdata2(frame, player_a_race, player_b_race, debug=False):
         map_name_threshold = threshold(map_name_crop, MAP_THRESHOLD)
         map_text = pytesseract.image_to_string(map_name_threshold, config='--psm 7').strip()
         map_text = map_canonicalizer.canonicalize(map_text)
+        if online_debug and not map_canonicalizer.matched(map_text):
+            cv.imwrite(f'map_unmatched{DEBUG_ITER}.png', frame)
+            DEBUG_ITER += 1
         if debug:
             cv.imwrite(f'2{DEBUG_ITER}mask.png', mask)
             cv.imwrite(f'2{DEBUG_ITER}mapcrop.png', map_name_crop)
@@ -129,7 +132,6 @@ def grab_matchdata2(frame, player_a_race, player_b_race, debug=False):
         player_mmr = re.sub('[^0-9]','', player_mmr_text)
         player_mmr = int(player_mmr) if len(player_mmr) else None
         player_mmr = player_mmr if plausible_mmr(player_mmr, player_rank) else None
-
         if debug:
             cv.imwrite(f'2{DEBUG_ITER}aname.png', player_name_threshold)
             cv.imwrite(f'2{DEBUG_ITER}bmmr.png', player_mmr_threshold)
@@ -242,7 +244,7 @@ def frametypetoraces(frametype):
 
 class VideoParser(object):
     FRAMESKIP = 30 # frameskip for generic parts
-    POI_FRAMESKIP = 4 # frameskip for points of interest
+    POI_FRAMESKIP = 1 # frameskip for points of interest
     TURNRATE_FRAMESKIP = 1800 # frameskip for turnrate
     UNKNOWN_THRESHOLD = 0.2
     # heuristic value to separate match screens
@@ -338,6 +340,8 @@ class VideoParser(object):
                 player_results = player_a_result + player_b_result
             else:
                 player_results = player_b_result + player_a_result
+            if player_results[3] != 'T':
+                print("WARNING: artosis was not terran...")
             game_data = player_results + (map_result, tr_result, lat_result, outcome_result)
             print(game_data) 
         self.cleargame()
@@ -445,6 +449,8 @@ def main():
     matchdata_frame = cv.imread('scene_reference/match_tvp/1.png')
     print(grab_matchdata2(matchdata_frame, 'T', 'P', debug=True))
     matchdata_frame = cv.imread('scene_reference/match_tvp/2.png')
+    print(grab_matchdata2(matchdata_frame, 'T', 'P', debug=True))
+    matchdata_frame = cv.imread('scene_reference/match_tvp/3.png')
     print(grab_matchdata2(matchdata_frame, 'T', 'P', debug=True))
     matchdata_frame = cv.imread('scene_reference/match_pvt/1.png')
     print(grab_matchdata2(matchdata_frame, 'P', 'T', debug=True))
