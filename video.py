@@ -13,11 +13,15 @@ from skimage.metrics import peak_signal_noise_ratio as psnr
 
 DEBUG_ITER = 0
 
+def crop(img, ry0, rx0, ry1, rx1):
+    height = img.shape[0]
+    width = img.shape[1]
+    return img[int(ry0*height):int(ry1*height), int(rx0*width):int(rx1*width)]
+
 def cropframe(frame, height, width):
-    CROP_START = (0, 0) #y, x
-    CROP_REL = (1080/1080, 1520/1920) #y, x
-    return frame[CROP_START[0]:int(CROP_START[0]+CROP_REL[0]*height),
-                 CROP_START[1]:int(CROP_START[1]+CROP_REL[1]*width)]
+    CROP_START = (0, 0) #ry1, rx1
+    CROP_REL = (1080/1080, 1520/1920) #ry1, rx1
+    return crop(frame, 0, 0, CROP_REL[0], CROP_REL[1])
 
 def threshold(img, boundary=56):
     res = cv.threshold(cv.cvtColor(img, cv.COLOR_BGR2GRAY), boundary, 255, cv.THRESH_BINARY_INV)[1]
@@ -59,6 +63,7 @@ def parse_matchtext(player_text):
 def grab_likely_rank(player_crop):
     #A: red, B: purple, S: yellow
     RANGES = {'A': (0, 15), 'B': (140, 160), 'S': (25, 35)}
+    # TODO: these can likely be further tuned
     VIBRANCE_LOW = 100
     VIBRANCE_HIGH = 200
     SATURATION_LOW = 100
@@ -70,8 +75,10 @@ def grab_likely_rank(player_crop):
     sorted_ranks = sorted(rank_to_sum, key=lambda pair:pair[1], reverse=True)
     if sorted_ranks[0][1] > 0:
         return sorted_ranks[0][0]
+    # couldn't match any colors
     return None
 
+# TODO: binary valid/invalid instead of guessing
 def guess_mmr(player_mmr, player_rank):
     RANK_MSDS = {'A': 2000, 'B': 1000, 'S': 2000}
     RANK_MSD2S = {'A': 2100, 'B': 1900, 'S': 2300}
@@ -94,16 +101,41 @@ def guess_mmr(player_mmr, player_rank):
 
 def grab_matchdata2(frame, player_a_race, player_b_race, debug=False):
     global DEBUG_ITER
+
+    def grab_playerdata(player_name_crop, player_mmr_crop, player_race):
+        NAME_THRESHOLD = 224
+        MMR_THRESHOLD = 72
+        global DEBUG_ITER
+        player_name_threshold = threshold(player_name_crop, NAME_THRESHOLD)
+        player_mmr_threshold = threshold(player_mmr_crop, MMR_THRESHOLD)
+        player_name_text = pytesseract.image_to_string(player_name_threshold, config='--psm 7')
+        player_mmr_text = pytesseract.image_to_string(player_mmr_threshold, config='--psm 7 -c tessedit_char_whitelist=0123456789')
+        player_name = player_name_text.strip()
+        player_rank = grab_likely_rank(player_mmr_crop)
+        player_mmr = re.sub('[^0-9]','', player_mmr_text)
+        player_mmr = int(player_mmr) if len(player_mmr) else None
+
+        if debug:
+            cv.imwrite(f'2{DEBUG_ITER}aname.png', player_name_threshold)
+            cv.imwrite(f'2{DEBUG_ITER}bmmr.png', player_mmr_threshold)
+            print(player_name_text.strip(), player_mmr_text.strip())
+            DEBUG_ITER += 1
+
+        player_data = (player_name, player_rank, player_mmr, player_race)
+        return player_data
+    
     NAME_BBOX_HEIGHT = 30
     NAME_BBOX_WIDTH = 232
     MMR_BBOX_HEIGHT = 20
     MMR_BBOX_WIDTH = 50
-    NAME_THRESHOLD = 224
-    MMR_THRESHOLD= 72
+    MAP_BBOX_HEIGHT = 24
+    MAP_BBOX_WIDTH = 463
+    MAP_THRESHOLD = 72
     PLAYER_A_NAME_BBOX = (763/1080, 408/1920, (763+NAME_BBOX_HEIGHT)/1080, (408+NAME_BBOX_WIDTH)/1920)
     PLAYER_B_NAME_BBOX = (763/1080, 1293/1920, (763+NAME_BBOX_HEIGHT)/1080, (1293+NAME_BBOX_WIDTH)/1920)
     PLAYER_A_MMR_BBOX = (793/1080, 575/1920, (793+MMR_BBOX_HEIGHT)/1080, (575+MMR_BBOX_WIDTH)/1920)
     PLAYER_B_MMR_BBOX = (793/1080, 1298/1920, (793+MMR_BBOX_HEIGHT)/1080, (1298+MMR_BBOX_WIDTH)/1920)
+    MAP_BBOX = (214/1080, 729/1920, (214+MAP_BBOX_HEIGHT)/1080, (729+MAP_BBOX_WIDTH)/1920)
 
     NAMES = ['artosis',
              'newgear',
@@ -113,43 +145,14 @@ def grab_matchdata2(frame, player_a_race, player_b_race, debug=False):
 
     height = frame.shape[0]
     width = frame.shape[1]
-    player_a_name_crop = frame[int(PLAYER_A_NAME_BBOX[0]*height):int(PLAYER_A_NAME_BBOX[2]*height),
-                          int(PLAYER_A_NAME_BBOX[1]*width):int(PLAYER_A_NAME_BBOX[3]*width)]
-    player_b_name_crop = frame[int(PLAYER_B_NAME_BBOX[0]*height):int(PLAYER_B_NAME_BBOX[2]*height),
-                          int(PLAYER_B_NAME_BBOX[1]*width):int(PLAYER_B_NAME_BBOX[3]*width)]
-    player_a_mmr_crop = frame[int(PLAYER_A_MMR_BBOX[0]*height):int(PLAYER_A_MMR_BBOX[2]*height),
-                          int(PLAYER_A_MMR_BBOX[1]*width):int(PLAYER_A_MMR_BBOX[3]*width)]
-    player_b_mmr_crop = frame[int(PLAYER_B_MMR_BBOX[0]*height):int(PLAYER_B_MMR_BBOX[2]*height),
-                          int(PLAYER_B_MMR_BBOX[1]*width):int(PLAYER_B_MMR_BBOX[3]*width)]
-   
-    player_a_name_threshold = threshold(player_a_name_crop, NAME_THRESHOLD)
-    player_b_name_threshold = threshold(player_b_name_crop, NAME_THRESHOLD)
-    player_a_mmr_threshold = threshold(player_a_mmr_crop, MMR_THRESHOLD)
-    player_b_mmr_threshold = threshold(player_b_mmr_crop, MMR_THRESHOLD)
-    player_a_name_text = pytesseract.image_to_string(player_a_name_threshold, config='--psm 7')
-    player_b_name_text = pytesseract.image_to_string(player_b_name_threshold, config='--psm 7')
-    player_a_mmr_text = pytesseract.image_to_string(player_a_mmr_threshold, config='--psm 7 -c tessedit_char_whitelist=0123456789')
-    player_b_mmr_text = pytesseract.image_to_string(player_b_mmr_threshold, config='--psm 7 -c tessedit_char_whitelist=0123456789')
-    if debug:
-        cv.imwrite(f'2{DEBUG_ITER}aname.png', player_a_name_threshold)
-        cv.imwrite(f'2{DEBUG_ITER}bname.png', player_b_name_threshold)
-        cv.imwrite(f'2{DEBUG_ITER}ammr.png', player_a_mmr_threshold)
-        cv.imwrite(f'2{DEBUG_ITER}bmmr.png', player_b_mmr_threshold)
-        DEBUG_ITER += 1
-        print(player_a_name_text.strip(), player_a_mmr_text.strip())
-        print(player_b_name_text.strip(), player_b_mmr_text.strip())
-    player_a_name = player_a_name_text.strip()
-    player_b_name = player_b_name_text.strip()
-    player_a_rank = grab_likely_rank(player_a_mmr_crop)
-    player_b_rank = grab_likely_rank(player_b_mmr_crop)
-    player_a_mmr = re.sub('[^0-9]','', player_a_mmr_text)
-    player_b_mmr = re.sub('[^0-9]','', player_b_mmr_text)
-    player_a_mmr = int(player_a_mmr) if len(player_a_mmr) else None
-    player_b_mmr = int(player_b_mmr) if len(player_b_mmr) else None
-    player_a_mmr = guess_mmr(player_a_mmr, player_a_rank)
-    player_b_mmr = guess_mmr(player_b_mmr, player_b_rank)
-    player_a_data = (player_a_name, player_a_rank, player_a_mmr, player_a_race)
-    player_b_data = (player_b_name, player_b_rank, player_b_mmr, player_b_race)
+
+    map_crop = crop(frame, *MAP_BBOX)
+    player_a_data = grab_playerdata(crop(frame, *PLAYER_A_NAME_BBOX),
+                                    crop(frame, *PLAYER_A_MMR_BBOX),
+                                    player_a_race)
+    player_b_data = grab_playerdata(crop(frame, *PLAYER_B_NAME_BBOX),
+                                    crop(frame, *PLAYER_B_MMR_BBOX),
+                                    player_b_race)
     return player_a_data, player_b_data
 
 def grab_matchdata(frame, player_a_race, player_b_race, debug=False):
@@ -162,10 +165,8 @@ def grab_matchdata(frame, player_a_race, player_b_race, debug=False):
     NAMES = ['artosis', 'newgear', 'valks', 'canadadry']
     height = frame.shape[0]
     width = frame.shape[1]
-    player_a_crop = frame[int(PLAYER_A_BBOX[0]*height):int(PLAYER_A_BBOX[2]*height),
-                          int(PLAYER_A_BBOX[1]*width):int(PLAYER_A_BBOX[3]*width)]
-    player_b_crop = frame[int(PLAYER_B_BBOX[0]*height):int(PLAYER_B_BBOX[2]*height),
-                          int(PLAYER_B_BBOX[1]*width):int(PLAYER_B_BBOX[3]*width)]
+    player_a_crop = crop(frame, *PLAYER_A_BBOX)
+    player_b_crop = crop(frame, *PLAYER_B_BBOX)
     player_a_threshold = threshold(player_a_crop)
     player_b_threshold = threshold(player_b_crop)
     if debug:
@@ -192,8 +193,7 @@ def grab_pointsdata(frame):
     POINTS_BBOX = (44/1080, 799/1920, (44+POINTS_BBOX_HEIGHT)/1080, (799+POINTS_BBOX_WIDTH)/1920)
     height = frame.shape[0]
     width = frame.shape[1]
-    points_crop = frame[int(POINTS_BBOX[0]*height):int(POINTS_BBOX[2]*height),
-                        int(POINTS_BBOX[1]*width):int(POINTS_BBOX[3]*width)]
+    points_crop = crop(frame, *POINTS_BBOX)
     points_threshold = threshold(points_crop, boundary=128)
     text = pytesseract.image_to_string(points_threshold, config='--psm 7')
     text = text.lower()
@@ -209,8 +209,7 @@ def grab_postgamedata(frame):
     POSTGAME_BBOX = (45/1080, 412/1920, (45+POSTGAME_BBOX_HEIGHT)/1080, (412+POSTGAME_BBOX_WIDTH)/1920)
     height = frame.shape[0]
     width = frame.shape[1]
-    postgame_crop = frame[int(POSTGAME_BBOX[0]*height):int(POSTGAME_BBOX[2]*height),
-                        int(POSTGAME_BBOX[1]*width):int(POSTGAME_BBOX[3]*width)]
+    postgame_crop = crop(frame, *POSTGAME_BBOX)
     postgame_threshold = threshold(postgame_crop)
     text = pytesseract.image_to_string(postgame_threshold, config='--psm 7')
     text = text.lower()
@@ -229,8 +228,7 @@ def grab_turnrate(frame, debug=False):
     THRESHOLD = 128
     height = frame.shape[0]
     width = frame.shape[1]
-    turnrate_crop = frame[int(TURNRATE_BBOX[0]*height):int(TURNRATE_BBOX[2]*height),
-                        int(TURNRATE_BBOX[1]*width):int(TURNRATE_BBOX[3]*width)]
+    turnrate_crop = crop(frame, *TURNRATE_BBOX)
     turnrate_threshold = threshold(turnrate_crop, THRESHOLD)
 
     text = pytesseract.image_to_string(turnrate_threshold, config='--psm 7')
@@ -440,6 +438,8 @@ class Video(object):
 def main():
     print("testing grab_matchdata")
     matchdata_frame = cv.imread('scene_reference/match_tvp/1.png')
+    print(grab_matchdata2(matchdata_frame, 'T', 'P', debug=True))
+    matchdata_frame = cv.imread('scene_reference/match_tvp/2.png')
     print(grab_matchdata2(matchdata_frame, 'T', 'P', debug=True))
     matchdata_frame = cv.imread('scene_reference/match_pvt/1.png')
     print(grab_matchdata2(matchdata_frame, 'P', 'T', debug=True))
