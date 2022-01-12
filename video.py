@@ -101,6 +101,29 @@ def guess_mmr(player_mmr, player_rank):
 
 def grab_matchdata2(frame, player_a_race, player_b_race, debug=False):
     global DEBUG_ITER
+    
+    def grab_mapdata(map_name_crop):
+        MAP_THRESHOLD = 60
+        VIBRANCE_LOW = 0
+        VIBRANCE_HIGH = 50
+        SATURATION_LOW = 70
+        SATURATION_HIGH = 160
+        BACKGROUND_COLOR_HUE_LOW = 45
+        BACKGROUND_COLOR_HUE_HIGH = 70
+        global DEBUG_ITER
+        mask = cv.inRange(cv.cvtColor(map_name_crop.copy(), cv.COLOR_BGR2HSV),
+                          (BACKGROUND_COLOR_HUE_LOW, SATURATION_LOW, VIBRANCE_LOW),
+                          (BACKGROUND_COLOR_HUE_HIGH, SATURATION_HIGH, VIBRANCE_HIGH))
+        mask = cv.bitwise_not(mask)
+        mask = mask.reshape(mask.shape[0], mask.shape[1], 1)
+        map_name_crop = map_name_crop * (mask == 255)
+        map_name_threshold = threshold(map_name_crop, MAP_THRESHOLD)
+        map_text = pytesseract.image_to_string(map_name_threshold, config='--psm 7').strip()
+        if debug:
+            cv.imwrite(f'2{DEBUG_ITER}mask.png', mask)
+            cv.imwrite(f'2{DEBUG_ITER}mapcrop.png', map_name_crop)
+            cv.imwrite(f'2{DEBUG_ITER}map.png', map_name_threshold)
+        return map_text
 
     def grab_playerdata(player_name_crop, player_mmr_crop, player_race):
         NAME_THRESHOLD = 224
@@ -130,7 +153,6 @@ def grab_matchdata2(frame, player_a_race, player_b_race, debug=False):
     MMR_BBOX_WIDTH = 50
     MAP_BBOX_HEIGHT = 24
     MAP_BBOX_WIDTH = 463
-    MAP_THRESHOLD = 72
     PLAYER_A_NAME_BBOX = (763/1080, 408/1920, (763+NAME_BBOX_HEIGHT)/1080, (408+NAME_BBOX_WIDTH)/1920)
     PLAYER_B_NAME_BBOX = (763/1080, 1293/1920, (763+NAME_BBOX_HEIGHT)/1080, (1293+NAME_BBOX_WIDTH)/1920)
     PLAYER_A_MMR_BBOX = (793/1080, 575/1920, (793+MMR_BBOX_HEIGHT)/1080, (575+MMR_BBOX_WIDTH)/1920)
@@ -145,15 +167,15 @@ def grab_matchdata2(frame, player_a_race, player_b_race, debug=False):
 
     height = frame.shape[0]
     width = frame.shape[1]
-
-    map_crop = crop(frame, *MAP_BBOX)
+    map_name_crop = crop(frame, *MAP_BBOX)
+    map_text = grab_mapdata(map_name_crop)
     player_a_data = grab_playerdata(crop(frame, *PLAYER_A_NAME_BBOX),
                                     crop(frame, *PLAYER_A_MMR_BBOX),
                                     player_a_race)
     player_b_data = grab_playerdata(crop(frame, *PLAYER_B_NAME_BBOX),
                                     crop(frame, *PLAYER_B_MMR_BBOX),
                                     player_b_race)
-    return player_a_data, player_b_data
+    return map_text, player_a_data, player_b_data
 
 def grab_matchdata(frame, player_a_race, player_b_race, debug=False):
     global DEBUG_ITER
@@ -328,7 +350,10 @@ class VideoParser(object):
         outcome_results = postgame_results + points_results
         print("grabbing match...")
         match_results = [grab_matchdata2(match_frame[1], *(frametypetoraces(match_frame[0]))) for match_frame in self.matchframes]
-        player_a_results, player_b_results = zip(*match_results)
+        map_results = [match_result[0] for match_result in match_results]
+        player_results = [(match_result[1], match_result[2]) for match_result in match_results]
+        player_a_results, player_b_results = zip(*player_results)
+        print(map_results)
         print(len(match_results), len(self.matchframes))
         print(player_a_results)
         print(player_b_results)
