@@ -24,6 +24,12 @@ def cropframe(frame, height, width):
     return crop(frame, 0, 0, CROP_REL[0], CROP_REL[1])
 
 def threshold(img, boundary=56):
+    BASEHEIGHT = 128
+    factor = int(BASEHEIGHT/img.shape[0])
+    width = int(factor * img.shape[1])
+    img = Image.fromarray(img)
+    img = img.resize((width, BASEHEIGHT), Image.ANTIALIAS)
+    img = np.array(img)
     res = cv.threshold(cv.cvtColor(img, cv.COLOR_BGR2GRAY), boundary, 255, cv.THRESH_BINARY_INV)[1]
     return res
 
@@ -77,14 +83,16 @@ NAME_PATTERNS = {'artosis': 'artosis',
                  'canadadry': 'artosis',
                  'artasis': 'artosis'}
 
-MAP_PATTERNS = {'poly': 'polypoid',
-                'polypoid': 'polypoid',
+MAP_PATTERNS = {'polypoid': 'polypoid',
                 'potypoid': 'polypoid',
-                'clipse': 'eclipse',
+                'poly': 'polypoid',
+
                 'eclipse': 'eclipse',
-                'good': 'goodnight',
+                'clipse': 'eclipse',
                 'good night': 'goodnight',
-                'largo': 'largo'}
+                'good': 'goodnight',
+                'largo': 'largo',
+                'larg': 'largo'}
 
 name_canonicalizer = Canonicalizer(NAME_PATTERNS)
 map_canonicalizer = Canonicalizer(MAP_PATTERNS)
@@ -93,7 +101,7 @@ def grab_matchdata2(frame, player_a_race, player_b_race, debug=False, online_deb
     global DEBUG_ITER
     
     def grab_mapdata(map_name_crop):
-        MAP_THRESHOLD = 60
+        MAP_THRESHOLD = 48
         VIBRANCE_LOW = 0
         VIBRANCE_HIGH = 50
         SATURATION_LOW = 70
@@ -120,8 +128,8 @@ def grab_matchdata2(frame, player_a_race, player_b_race, debug=False, online_deb
         return map_text
 
     def grab_playerdata(player_name_crop, player_mmr_crop, player_race):
-        NAME_THRESHOLD = 224
-        MMR_THRESHOLD = 72
+        NAME_THRESHOLD = 128
+        MMR_THRESHOLD = 50
         global DEBUG_ITER
         player_name_threshold = threshold(player_name_crop, NAME_THRESHOLD)
         player_mmr_threshold = threshold(player_mmr_crop, MMR_THRESHOLD)
@@ -287,8 +295,17 @@ class VideoParser(object):
         self.gameframe = False
 
     def savegame(self):
-        def aggregate(values):
-            temp = max(set(values), key=lambda item: values.count(item) if item is not None else 0)
+        def aggregate(values, canonical=None):
+            def score(item):
+                # None values have lowest priority
+                if item is None:
+                    return -1
+                # Non-canonical values have max priority 1
+                elif canonical is not None and not canonical(item):
+                    return values.count(item)/len(values)
+                # Canonical values have priority equal to count
+                return values.count(item)
+            temp = max(set(values), key=score)
             return temp
             
         if self.last_match_time is None:
@@ -312,12 +329,12 @@ class VideoParser(object):
         player_results = [(match_result[1], match_result[2]) for match_result in match_results]
         player_a_results, player_b_results = zip(*player_results)
         print(len(match_results), len(self.matchframes))
-        map_result = aggregate(map_results)
+        map_result = aggregate(map_results, map_canonicalizer.matched)
         player_a_names, player_a_ranks, player_a_mmrs, player_a_races = zip(*player_a_results)
         player_b_names, player_b_ranks, player_b_mmrs, player_b_races = zip(*player_b_results)
         player_a_results = (player_a_names, player_a_ranks, player_a_mmrs, player_a_races)
         player_b_results = (player_b_names, player_b_ranks, player_b_mmrs, player_b_races)
-        player_a_result = tuple(aggregate(result) for result in player_a_results)
+        player_a_result = tuple(aggregate(result, name_canonicalizer.matched) for result in player_a_results)
         player_b_result = tuple(aggregate(result) for result in player_b_results)
         player_a_artosis = name_canonicalizer.matched(player_a_result[0])
         player_b_artosis = name_canonicalizer.matched(player_b_result[0])
@@ -335,23 +352,37 @@ class VideoParser(object):
             print("WARNING: double artosis, skipping...")
         else:
             if not map_canonicalizer.matched(map_result):
-                print(f"WARNING: unable to match map: {map_result}")
+                print(f"WARNING: unable to match map: {map_results}")
             if player_a_artosis:
                 player_results = player_a_result + player_b_result
             else:
                 player_results = player_b_result + player_a_result
             if player_results[3] != 'T':
                 print("WARNING: artosis was not terran...")
-            game_data = player_results + (map_result, tr_result, lat_result, outcome_result)
+            game_data = player_results + (map_result, tr_result, lat_result, self.last_match_time/1000, outcome_result)
             print(game_data) 
         self.cleargame()
 
-    def step(self, frame, time):
-        self.framecounter += 1
+    def step(self, capture):
+        def maybe_append_maybe_evict(l, item):
+            if len(l) > self.MAX_ANALYSIS_FRAMES:
+                if random.random() > 0.5:
+                   random.shuffle(l)
+                   l[-1] = item
+            else:
+                l.append(item) 
+        time = capture.get(cv.CAP_PROP_POS_MSEC)
         if self.poi and (time - self.poi < self.POI_INTERVAL) and self.framecounter % self.POI_FRAMESKIP == 0:
-            pass # continue processing
-        elif self.framecounter % self.FRAMESKIP != 0:
+            ret, frame = capture.read()
+            assert ret
+        elif self.framecounter % self.FRAMESKIP != 0: 
+            capture.grab()
+            self.framecounter += 1
             return
+        else:
+            ret, frame = capture.read()
+            assert ret
+
         frametype, sim = self.reference_frames.match(frame)
         if sim < self.UNKNOWN_THRESHOLD:
             self.unknown_count += 1
@@ -366,23 +397,25 @@ class VideoParser(object):
                 self.matchframes = [(frametype, frame)]
                 self.last_match_time = time
             else:
-                self.matchframes.append((frametype, frame))
+                maybe_append_maybe_evict(self.matchframes, (frametype, frame))
         elif 'postgame' in frametype:
             self.poi = time
             if self.last_match_time is None:
                 print("WARNING: postgame without match, skipping...", time)
             else:
-                self.postgameframes.append(frame)
+                maybe_append_maybe_evict(self.postgameframes, frame)
         elif 'points' in frametype:
             self.poi = time
             if self.last_match_time is None:
                 print("WARNING: points without match, skipping...", time)
             else:
-                self.pointsframes.append(frame)
+                maybe_append_maybe_evict(self.pointsframes, frame)
         elif 'game' in frametype:
             self.gameframe = True
             if self.framecounter % self.TURNRATE_FRAMESKIP == 0:
-                self.gameframes.append(frame)
+                maybe_append_maybe_evict(self.gameframes, frame)
+
+        self.framecounter += 1
 
     def report(self):
         self.savegame()
@@ -437,11 +470,7 @@ class Video(object):
         while self.cap.isOpened():
             if frame_num >= self.frame_count:
                 break
-            ret, frame = self.cap.read()
-            if ret:
-                self.video_parser.step(frame, self.cap.get(cv.CAP_PROP_POS_MSEC))
-            else:
-                print("warning, skipping frame...")
+            self.video_parser.step(self.cap)
             frame_num += 1
 
 def main():

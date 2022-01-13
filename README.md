@@ -11,7 +11,9 @@ TODOS:
 + (done) implement map name cleanup/sanitizing
 + (done) implement aggregation for match data
 + (done) implement aggregation for postgame data
-+ implement quieter printing for matches found
++ (done) implement quieter printing for matches found
++ implement grab for frameskip
++ implement earlier parsing
 + implement video parsing data return for VOD
 + milestone: no manual interventions on two unseen VODs
 + milestone: no outrageous data errors on two unseen VODs
