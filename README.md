@@ -12,9 +12,10 @@ TODOS:
 + (done) implement aggregation for match data
 + (done) implement aggregation for postgame data
 + (done) implement quieter printing for matches found
-+ implement grab for frameskip
-+ implement earlier parsing
++ (done) implement grab for frameskip
++ (done) implement earlier parsing
 + implement video parsing data return for VOD
++ implement computed features
 + milestone: no manual interventions on two unseen VODs
 + milestone: no outrageous data errors on two unseen VODs
 + add holiday edition queue reference image

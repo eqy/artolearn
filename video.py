@@ -13,6 +13,8 @@ from skimage.metrics import peak_signal_noise_ratio as psnr
 
 DEBUG_ITER = 0
 
+cv.setNumThreads(4)
+
 def crop(img, ry0, rx0, ry1, rx1):
     height = img.shape[0]
     width = img.shape[1]
@@ -234,7 +236,7 @@ def grab_turnrate(frame, debug=False):
     num = int(num) if len(num) else 0
     if num in (8, 12, 14, 16, 20, 24):
         tr = num
-    return lat, tr
+    return tr, lat
 
 def frametypetoraces(frametype):
     if 'tvz' in frametype:
@@ -252,14 +254,17 @@ def frametypetoraces(frametype):
 
 class VideoParser(object):
     FRAMESKIP = 30 # frameskip for generic parts
-    POI_FRAMESKIP = 1 # frameskip for points of interest
+    POI_FRAMESKIP = 4 # frameskip for points of interest
+    MATCH_FRAMESKIP = 20
     TURNRATE_FRAMESKIP = 1800 # frameskip for turnrate
+    POSTGAME_FRAMESKIP = 20
+    POINTS_FRAMESKIP = 20
     UNKNOWN_THRESHOLD = 0.2
     # heuristic value to separate match screens
     MATCH_TIMEOUT = 30000 # msec
     # time to dwell on a point of interest for frameskip
     POI_INTERVAL = 1000 #msec
-    MAX_ANALYSIS_FRAMES = 100
+    TARGET_FRAMES = 200
 
     def __init__(self, reference_frames, debug_dump=True):
         self.reference_frames = reference_frames
@@ -273,24 +278,14 @@ class VideoParser(object):
         # whether current frame is interesting
         self.poi = False
 
-    def pruneframes(self):
-        random.shuffle(self.matchframes)
-        random.shuffle(self.postgameframes)
-        random.shuffle(self.pointsframes)
-        random.shuffle(self.gameframes)
-        self.matchframes = self.matchframes[:self.MAX_ANALYSIS_FRAMES]
-        self.postgameframes = self.postgameframes[:self.MAX_ANALYSIS_FRAMES]
-        self.pointsframes = self.pointsframes[:self.MAX_ANALYSIS_FRAMES]
-        self.gameframes =   self.gameframes[:self.MAX_ANALYSIS_FRAMES]
-
     def setdate(self, date):
         self.date = date
 
     def cleargame(self):
-        self.matchframes = list()
-        self.postgameframes = list()
-        self.pointsframes = list()
-        self.gameframes = list()
+        self.match_results = list()
+        self.postgame_results = list()
+        self.points_results = list()
+        self.turnrate_results = list()
         self.last_match_time = None
         self.gameframe = False
 
@@ -312,39 +307,35 @@ class VideoParser(object):
             print("no game to save, done!")
             assert len(self.matchframes) == 0
             assert len(self.postgameframes) == 0
+            return
         else:
             if not self.gameframe:
                 print("WARNING, trying to save game without any gameframes")
-            assert len(self.postgameframes) > 0 or len(self.pointsframes) > 0
-        print(f"saving postgameframes {len(self.postgameframes)} pointsframes {len(self.pointsframes)} {len(self.matchframes)} matchframes")
-        self.pruneframes()
-        print("grabbing postgame results...")
-        postgame_results = [grab_postgamedata(postgame_frame) for postgame_frame in self.postgameframes]
-        print("grabbing points results...")
-        points_results = [grab_pointsdata(points_frame) for points_frame in self.pointsframes]
-        outcome_results = postgame_results + points_results
-        print("grabbing match...")
-        match_results = [grab_matchdata2(match_frame[1], *(frametypetoraces(match_frame[0]))) for match_frame in self.matchframes]
-        map_results = [match_result[0] for match_result in match_results]
-        player_results = [(match_result[1], match_result[2]) for match_result in match_results]
+            assert len(self.postgame_results) > 0 or len(points_results) > 0
+        print(len(self.match_results), len(self.points_results),
+          len(self.postgame_results), len(self.turnrate_results))
+
+        map_results = [match_result[0] for match_result in self.match_results]
+        outcome_results = self.postgame_results + self.points_results
+
+        player_results = [(match_result[1], match_result[2]) for match_result in self.match_results]
         player_a_results, player_b_results = zip(*player_results)
-        print(len(match_results), len(self.matchframes))
-        map_result = aggregate(map_results, map_canonicalizer.matched)
+
         player_a_names, player_a_ranks, player_a_mmrs, player_a_races = zip(*player_a_results)
         player_b_names, player_b_ranks, player_b_mmrs, player_b_races = zip(*player_b_results)
         player_a_results = (player_a_names, player_a_ranks, player_a_mmrs, player_a_races)
         player_b_results = (player_b_names, player_b_ranks, player_b_mmrs, player_b_races)
-        player_a_result = tuple(aggregate(result, name_canonicalizer.matched) for result in player_a_results)
+
+        player_a_result = tuple(aggregate(result) for result in player_a_results)
         player_b_result = tuple(aggregate(result) for result in player_b_results)
         player_a_artosis = name_canonicalizer.matched(player_a_result[0])
         player_b_artosis = name_canonicalizer.matched(player_b_result[0])
-        turnrate_results = [grab_turnrate(game_frame) for game_frame in self.gameframes]
-        trs, lats = zip(*turnrate_results)
+
+        map_result = aggregate(map_results, map_canonicalizer.matched)
+        trs, lats = zip(*self.turnrate_results)
         tr_result = aggregate(trs)
         lat_result = aggregate(lats)
         outcome_result = aggregate(outcome_results)
-        print(tr_result, lat_result)
-
 
         if not(player_a_artosis) and not(player_b_artosis):
             print(f"WARNING: unable to find artosis in: {player_a_result[0]}, {player_b_result[0]}, skipping...")
@@ -364,13 +355,6 @@ class VideoParser(object):
         self.cleargame()
 
     def step(self, capture):
-        def maybe_append_maybe_evict(l, item):
-            if len(l) > self.MAX_ANALYSIS_FRAMES:
-                if random.random() > 0.5:
-                   random.shuffle(l)
-                   l[-1] = item
-            else:
-                l.append(item) 
         time = capture.get(cv.CAP_PROP_POS_MSEC)
         if self.poi and (time - self.poi < self.POI_INTERVAL) and self.framecounter % self.POI_FRAMESKIP == 0:
             ret, frame = capture.read()
@@ -394,27 +378,25 @@ class VideoParser(object):
                 self.last_match_time = time
             elif (time - self.last_match_time) > self.MATCH_TIMEOUT:
                 self.savegame()
-                self.matchframes = [(frametype, frame)]
                 self.last_match_time = time
-            else:
-                maybe_append_maybe_evict(self.matchframes, (frametype, frame))
+            if len(self.match_results) < self.TARGET_FRAMES or self.frame_count % self.MATCH_FRAMESKIP == 0:
+                self.match_results.append(grab_matchdata2(frame, *frametypetoraces(frametype)))
         elif 'postgame' in frametype:
             self.poi = time
             if self.last_match_time is None:
                 print("WARNING: postgame without match, skipping...", time)
-            else:
-                maybe_append_maybe_evict(self.postgameframes, frame)
+            elif len(self.postgame_results) < self.TARGET_FRAMES or self.framecounter % self.POSTGAME_FRAMESKIP == 0:
+                self.postgame_results.append(grab_postgamedata(frame))
         elif 'points' in frametype:
             self.poi = time
             if self.last_match_time is None:
                 print("WARNING: points without match, skipping...", time)
-            else:
-                maybe_append_maybe_evict(self.pointsframes, frame)
+            elif len(self.points_results) < self.TARGET_FRAMES or self.framecounter % self.POINTS_FRAMESKIP == 0:
+                self.points_results.append(grab_pointsdata(frame))
         elif 'game' in frametype:
             self.gameframe = True
-            if self.framecounter % self.TURNRATE_FRAMESKIP == 0:
-                maybe_append_maybe_evict(self.gameframes, frame)
-
+            if len(self.turnrate_results) < self.TARGET_FRAMES or self.framecounter % self.TURNRATE_FRAMESKIP == 0:
+                self.turnrate_results.append(grab_turnrate(frame))
         self.framecounter += 1
 
     def report(self):
