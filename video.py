@@ -352,6 +352,7 @@ class VideoParser(object):
                 print("WARNING: artosis was not terran...")
             game_data = player_results + (map_result, tr_result, lat_result, self.last_match_time/1000, outcome_result)
             print(game_data) 
+            self.games.append(game_data)
         self.cleargame()
 
     def step(self, capture):
@@ -399,8 +400,20 @@ class VideoParser(object):
                 self.turnrate_results.append(grab_turnrate(frame))
         self.framecounter += 1
 
+    def compute_features(self):
+        # compute win-l, per-MU w/l
+        wins = 0
+        losses = 0
+        vp_wins = 0
+        vp_losses = 0
+        vt_wins = 0
+        vt_losses = 0
+        vz_wins = 0
+        vz_losses = 0
+
     def report(self):
         self.savegame()
+        #TODO: computefeatures, etc, return
 
 class ReferenceFrames(object):
     SSIM_RESOLUTION = (32, 32) #y, x
