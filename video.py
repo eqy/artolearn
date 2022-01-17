@@ -103,9 +103,9 @@ def grab_matchdata2(frame, player_a_race, player_b_race, debug=False, online_deb
     global DEBUG_ITER
     
     def grab_mapdata(map_name_crop):
-        MAP_THRESHOLD = 48
+        MAP_THRESHOLD = 45
         VIBRANCE_LOW = 0
-        VIBRANCE_HIGH = 50
+        VIBRANCE_HIGH = 70
         SATURATION_LOW = 70
         SATURATION_HIGH = 160
         BACKGROUND_COLOR_HUE_LOW = 45
@@ -266,11 +266,12 @@ class VideoParser(object):
     POI_INTERVAL = 1000 #msec
     TARGET_FRAMES = 200
 
-    def __init__(self, reference_frames, debug_dump=True):
+    def __init__(self, reference_frames, debug=False, debug_dump=True):
         self.reference_frames = reference_frames
         self.cleargame()
         self.games = list()
         self.date = None
+        self.debug = debug
         self.debug_dump = debug_dump
         self.framecounter = 0
         self.unknown_count = 0
@@ -311,7 +312,7 @@ class VideoParser(object):
         else:
             if not self.gameframe:
                 print("WARNING, trying to save game without any gameframes")
-            assert len(self.postgame_results) > 0 or len(points_results) > 0
+            assert len(self.postgame_results) > 0 or len(self.points_results) > 0
         print(len(self.match_results), len(self.points_results),
           len(self.postgame_results), len(self.turnrate_results))
 
@@ -384,12 +385,16 @@ class VideoParser(object):
                 self.match_results.append(grab_matchdata2(frame, *frametypetoraces(frametype)))
         elif 'postgame' in frametype:
             self.poi = time
+            if self.debug:
+                print("postgame", time)
             if self.last_match_time is None:
                 print("WARNING: postgame without match, skipping...", time)
             elif len(self.postgame_results) < self.TARGET_FRAMES or self.framecounter % self.POSTGAME_FRAMESKIP == 0:
                 self.postgame_results.append(grab_postgamedata(frame))
         elif 'points' in frametype:
             self.poi = time
+            if self.debug:
+                print("postgame", time)
             if self.last_match_time is None:
                 print("WARNING: points without match, skipping...", time)
             elif len(self.points_results) < self.TARGET_FRAMES or self.framecounter % self.POINTS_FRAMESKIP == 0:
@@ -522,6 +527,8 @@ def main():
     print(grab_matchdata2(matchdata_frame, 'T', 'Z', debug=True))
     matchdata_frame = cv.imread('scene_reference/match_tvz/3.png')
     print(grab_matchdata2(matchdata_frame, 'T', 'Z', debug=True))
+    matchdata_frame = cv.imread('scene_reference/match_tvz/4.png')
+    print(grab_matchdata2(matchdata_frame, 'T', 'Z', debug=True))
     matchdata_frame = cv.imread('scene_reference/match_zvt/1.png')
     print(grab_matchdata2(matchdata_frame, 'Z', 'T', debug=True))
     matchdata_frame = cv.imread('scene_reference/match_tvt/1.png')
@@ -549,12 +556,6 @@ def main():
     print(grab_turnrate(turnratedata_frame, debug=True))
     turnratedata_frame = cv.imread('scene_reference/game_terran/4.png')
     print(grab_turnrate(turnratedata_frame, debug=True))
-    print("testing video parsing...")
-    reference_frames = ReferenceFrames('scene_reference')
-    video_parser = VideoParser(reference_frames)
-    test_video = Video('test2.mp4', video_parser)
-    test_video.parse()
-    print(test_video.report())
     print("OK")
 
 if __name__ == '__main__':
