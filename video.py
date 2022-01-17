@@ -140,7 +140,7 @@ def grab_matchdata2(frame, player_a_race, player_b_race, debug=False, online_deb
         player_name = name_canonicalizer.canonicalize(player_name_text.strip())
         player_rank = grab_likely_rank(player_mmr_crop)
         player_mmr = re.sub('[^0-9]','', player_mmr_text)
-        player_mmr = int(player_mmr) if len(player_mmr) else None
+        player_mmr = int(player_mmr) % 10000 if len(player_mmr) else None
         player_mmr = player_mmr if plausible_mmr(player_mmr, player_rank) else None
         if debug:
             cv.imwrite(f'2{DEBUG_ITER}aname.png', player_name_threshold)
@@ -350,7 +350,7 @@ class VideoParser(object):
                 player_results = player_b_result + player_a_result
             if player_results[3] != 'T':
                 print("WARNING: artosis was not terran...")
-            game_data = player_results + (map_result, tr_result, lat_result, self.last_match_time/1000, outcome_result)
+            game_data = (self.date,) + player_results + (map_result, tr_result, lat_result, self.last_match_time/1000, outcome_result)
             print(game_data) 
             self.games.append(game_data)
         self.cleargame()
@@ -410,10 +410,39 @@ class VideoParser(object):
         vt_losses = 0
         vz_wins = 0
         vz_losses = 0
+        for idx, game in enumerate(self.games):
+            feature_tuple = (wins, losses, wins - losses,
+                             vp_wins, vp_losses, vp_wins - vp_losses,
+                             vt_wins, vt_losses, vt_wins - vt_losses,
+                             vz_wins, vz_losses, vz_wins - vz_losses)
+            self.games[idx] = game + feature_tuple
+            if game[-1] == 'victory':
+                wins += 1
+                if game[8] is not None:
+                    if game[8] == 'P':
+                        vp_wins += 1
+                    elif game[8] == 'T':
+                        vt_wins += 1
+                    elif game[8] == 'Z':
+                        vz_wins += 1
+                    else:
+                        assert False, "race unknown"
+            elif game[-1] == 'defeat':
+                losses += 1 
+                if game[8] is not None:
+                    if game[8] == 'P':
+                        vp_losses += 1
+                    elif game[8] == 'T':
+                        vt_losses += 1
+                    elif game[8] == 'Z':
+                        vz_losses += 1
+                    else:
+                        assert False, "race unknown" 
 
     def report(self):
         self.savegame()
-        #TODO: computefeatures, etc, return
+        self.compute_features()
+        return self.games
 
 class ReferenceFrames(object):
     SSIM_RESOLUTION = (32, 32) #y, x
@@ -458,6 +487,7 @@ class Video(object):
         self.frame_count = int(self.cap.get(cv.CAP_PROP_FRAME_COUNT))
         self.height = int(self.cap.get(cv.CAP_PROP_FRAME_HEIGHT))
         self.width = int(self.cap.get(cv.CAP_PROP_FRAME_WIDTH))
+        self.parsed = False
         print(f"opened {self.filepath} with {self.frame_count} frames height {self.height} width {self.width}")
 
     def parse(self):
@@ -467,6 +497,12 @@ class Video(object):
                 break
             self.video_parser.step(self.cap)
             frame_num += 1
+        self.parsed = True
+
+    def report(self):
+        if not self.parsed:
+            self.parse()
+        return self.video_parser.report()
 
 def main():
     print("testing grab_matchdata")
@@ -518,6 +554,7 @@ def main():
     video_parser = VideoParser(reference_frames)
     test_video = Video('test2.mp4', video_parser)
     test_video.parse()
+    print(test_video.report())
     print("OK")
 
 if __name__ == '__main__':
