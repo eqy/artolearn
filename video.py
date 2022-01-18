@@ -54,7 +54,7 @@ def grab_likely_rank(player_crop):
     return None
 
 def plausible_mmr(player_mmr, player_rank):
-    RANK_RANGES = {'A': (2050, 2300), 'B': (1700, 2100), 'S': (2200, 3000)}
+    RANK_RANGES = {'A': (2000, 2300), 'B': (1700, 2100), 'S': (2200, 3000)}
     if player_mmr is None:
         return False
     if player_rank is None: # LOL
@@ -193,7 +193,7 @@ def grab_pointsdata(frame):
         return 'defeat'
     return None
 
-def grab_postgamedata(frame):
+def grab_postgamedata(frame, debug=False):
     POSTGAME_BBOX_HEIGHT = 46
     POSTGAME_BBOX_WIDTH = 183
     POSTGAME_BBOX = (45/1080, 412/1920, (45+POSTGAME_BBOX_HEIGHT)/1080, (412+POSTGAME_BBOX_WIDTH)/1920)
@@ -201,6 +201,8 @@ def grab_postgamedata(frame):
     postgame_threshold = threshold(postgame_crop)
     text = pytesseract.image_to_string(postgame_threshold, config='--psm 7')
     text = text.lower()
+    if debug:
+        print("postgame text:", text)
     if 'victory' in text:
         return 'victory'
     elif 'pending' in text:
@@ -308,11 +310,15 @@ class VideoParser(object):
             print("no game to save, done!")
             assert len(self.matchframes) == 0
             assert len(self.postgameframes) == 0
+            self.cleargame()
             return
         else:
             if not self.gameframe:
                 print("WARNING, trying to save game without any gameframes")
-            assert len(self.postgame_results) > 0 or len(self.points_results) > 0
+            elif len(self.postgame_results) == 0 and len(self.points_results) == 0:
+                print("WARNING, game frames detected but no result!")
+                self.cleargame()
+                return
         print(len(self.match_results), len(self.points_results),
           len(self.postgame_results), len(self.turnrate_results))
 
@@ -357,6 +363,7 @@ class VideoParser(object):
         self.cleargame()
 
     def step(self, capture):
+        global DEBUG_ITER
         time = capture.get(cv.CAP_PROP_POS_MSEC)
         if self.poi and (time - self.poi < self.POI_INTERVAL) and self.framecounter % self.POI_FRAMESKIP == 0:
             ret, frame = capture.read()
@@ -370,6 +377,8 @@ class VideoParser(object):
             assert ret
 
         frametype, sim = self.reference_frames.match(frame)
+        if self.debug:
+            print(frametype, time)
         if sim < self.UNKNOWN_THRESHOLD:
             self.unknown_count += 1
         elif 'match' in frametype:
@@ -381,7 +390,8 @@ class VideoParser(object):
             elif (time - self.last_match_time) > self.MATCH_TIMEOUT:
                 self.savegame()
                 self.last_match_time = time
-            if len(self.match_results) < self.TARGET_FRAMES or self.frame_count % self.MATCH_FRAMESKIP == 0:
+            if len(self.match_results) < self.TARGET_FRAMES or self.framecounter % self.MATCH_FRAMESKIP == 0:
+                DEBUG_ITER = int(time/1000)
                 self.match_results.append(grab_matchdata2(frame, *frametypetoraces(frametype)))
         elif 'postgame' in frametype:
             self.poi = time
@@ -390,7 +400,7 @@ class VideoParser(object):
             if self.last_match_time is None:
                 print("WARNING: postgame without match, skipping...", time)
             elif len(self.postgame_results) < self.TARGET_FRAMES or self.framecounter % self.POSTGAME_FRAMESKIP == 0:
-                self.postgame_results.append(grab_postgamedata(frame))
+                self.postgame_results.append(grab_postgamedata(frame, self.debug))
         elif 'points' in frametype:
             self.poi = time
             if self.debug:
@@ -468,7 +478,7 @@ class ReferenceFrames(object):
                     else:
                         self.frametypes[frametype] = [small]
 
-    def match(self, frame):
+    def match(self, frame, debug=False):
         crop = cropframe(frame, frame.shape[0], frame.shape[1])
         gray = cv.cvtColor(crop, cv.COLOR_BGR2GRAY)
         small = cv.resize(gray, self.SSIM_RESOLUTION)
@@ -476,11 +486,14 @@ class ReferenceFrames(object):
         for frametype in self.frametypes.keys():
             maxscore = -1
             for reference_frame in self.frametypes[frametype]:
-                score = psnr(small, reference_frame)
+                score = ssim(small, reference_frame)
                 if score > maxscore:
                     maxscore = score
             max_scores.append((frametype, maxscore))
-        return sorted(max_scores, key=lambda item: item[1], reverse=True)[0]
+        ret = sorted(max_scores, key=lambda item: item[1], reverse=True)[0]
+        if (debug):
+            print(ret)
+        return ret
 
 class Video(object):
     def __init__(self, filepath, video_parser):
@@ -510,6 +523,10 @@ class Video(object):
         return self.video_parser.report()
 
 def main():
+    reference_frames = ReferenceFrames('scene_reference')
+    reference_frames.match(cv.imread('postgame2.png'), debug=True)
+    print(grab_postgamedata(cv.imread('postgame2.png'), debug=True))
+
     print("testing grab_matchdata")
     matchdata_frame = cv.imread('scene_reference/match_tvp/1.png')
     print(grab_matchdata2(matchdata_frame, 'T', 'P', debug=True))
@@ -527,7 +544,7 @@ def main():
     print(grab_matchdata2(matchdata_frame, 'T', 'Z', debug=True))
     matchdata_frame = cv.imread('scene_reference/match_tvz/3.png')
     print(grab_matchdata2(matchdata_frame, 'T', 'Z', debug=True))
-    matchdata_frame = cv.imread('scene_reference/match_tvz/4.png')
+    matchdata_frame = cv.imread('scene_reference/match_tvz/5.png')
     print(grab_matchdata2(matchdata_frame, 'T', 'Z', debug=True))
     matchdata_frame = cv.imread('scene_reference/match_zvt/1.png')
     print(grab_matchdata2(matchdata_frame, 'Z', 'T', debug=True))
