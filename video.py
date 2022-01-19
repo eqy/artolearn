@@ -314,9 +314,9 @@ class VideoParser(object):
             return
         else:
             if not self.gameframe:
-                print("WARNING, trying to save game without any gameframes")
-            elif len(self.postgame_results) == 0 and len(self.points_results) == 0:
-                print("WARNING, game frames detected but no result!")
+                print(f"WARNING, trying to save game without any gameframes @{self.last_match_time}")
+            if len(self.postgame_results) == 0 and len(self.points_results) == 0:
+                print(f"WARNING, no result! @{self.last_match_time}")
                 self.cleargame()
                 return
         print(len(self.match_results), len(self.points_results),
