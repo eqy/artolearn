@@ -16,6 +16,7 @@ TODOS:
 + (done) implement earlier parsing
 + (done) implement video parsing data return for VOD
 + (done) implement computed features
++ (done) race detection rather than relying on scenes
 + milestone: no manual interventions on two unseen VODs
 + milestone: no outrageous data errors on two unseen VODs
 + add holiday edition queue reference image

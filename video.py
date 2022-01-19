@@ -392,7 +392,8 @@ class VideoParser(object):
                 self.last_match_time = time
             if len(self.match_results) < self.TARGET_FRAMES or self.framecounter % self.MATCH_FRAMESKIP == 0:
                 DEBUG_ITER = int(time/1000)
-                self.match_results.append(grab_matchdata2(frame, *frametypetoraces(frametype)))
+                player_a_race, player_b_race = self.reference_frames.matchrace(frame)
+                self.match_results.append(grab_matchdata2(frame, player_a_race, player_b_race))
         elif 'postgame' in frametype:
             self.poi = time
             if self.debug:
@@ -460,14 +461,16 @@ class VideoParser(object):
         return self.games
 
 class ReferenceFrames(object):
-    SSIM_RESOLUTION = (32, 32) #y, x
+    SSIM_RESOLUTION = (128, 128) #y, x
 
     def __init__(self, filepath):
         self.filepath = filepath
         self.frametypes = dict()
+        self.racetoplayer_a_frames = dict()
+        self.racetoplayer_b_frames = dict()
         for dirpath, _, filenames in os.walk(filepath):
             for filename in filenames:
-                ext = os.path.splitext(filename)[1]
+                name, ext = os.path.splitext(filename)
                 if ext == '.jpg' or ext == '.png':
                     frame = cv.imread(os.path.join(dirpath, filename), cv.IMREAD_GRAYSCALE)
                     crop = cropframe(frame, frame.shape[0], frame.shape[1])
@@ -477,6 +480,18 @@ class ReferenceFrames(object):
                         self.frametypes[frametype].append(small) 
                     else:
                         self.frametypes[frametype] = [small]
+                    if 'match' in dirpath:
+                        player_a_race = dirpath[-3].upper()
+                        player_b_race = dirpath[-1].upper()
+                        if player_a_race in self.racetoplayer_a_frames:
+                            self.racetoplayer_a_frames[player_a_race].append(frame)
+                        else:
+                            self.racetoplayer_a_frames[player_a_race] = [frame]
+                        if player_b_race in self.racetoplayer_b_frames:
+                            self.racetoplayer_b_frames[player_b_race].append(frame)
+                        else:
+                            self.racetoplayer_b_frames[player_b_race] = [frame]
+                       
 
     def match(self, frame, debug=False):
         crop = cropframe(frame, frame.shape[0], frame.shape[1])
@@ -494,6 +509,40 @@ class ReferenceFrames(object):
         if (debug):
             print(ret)
         return ret
+
+    def matchrace(self, frame, online_debug=True):
+        global DEBUG_ITER
+        PLAYER_A_BBOX = [256/1080, 410/1920, (256+450)/1080, (410+349)/1920]
+        PLAYER_B_BBOX = [232/1080, 1145/1920, (232+486)/1080, (1145+359)/1920] 
+        player_a_crop = cv.cvtColor(crop(frame, *PLAYER_A_BBOX), cv.COLOR_BGR2GRAY)
+        player_b_crop = cv.cvtColor(crop(frame, *PLAYER_B_BBOX), cv.COLOR_BGR2GRAY)
+        max_scores = list()
+        for frametype in self.racetoplayer_a_frames.keys():
+            maxscore = -1
+            for reference_frame in self.racetoplayer_a_frames[frametype]:
+                score = ssim(player_a_crop, crop(reference_frame, *PLAYER_A_BBOX))
+                if score > maxscore:
+                    maxscore = score
+            max_scores.append((frametype, maxscore))
+        player_a_race = sorted(max_scores, key=lambda item: item[1], reverse=True)[0]
+        if player_a_race[1] < 0.65:
+            cv.imwrite(f'racedebuga_{DEBUG_ITER}.png', frame)
+            DEBUG_ITER += 1 
+        player_a_race = player_a_race[0]
+        max_scores = list()
+        for frametype in self.racetoplayer_b_frames.keys():
+            maxscore = -1
+            for reference_frame in self.racetoplayer_b_frames[frametype]:
+                score = ssim(player_b_crop, crop(reference_frame, *PLAYER_B_BBOX))
+                if score > maxscore:
+                    maxscore = score
+            max_scores.append((frametype, maxscore))
+        player_b_race = sorted(max_scores, key=lambda item: item[1], reverse=True)[0]
+        if player_b_race[1] < 0.65:
+            cv.imwrite(f'racedebugb_{DEBUG_ITER}.png', frame)
+            DEBUG_ITER += 1 
+        player_b_race = player_b_race[0]
+        return player_a_race, player_b_race
 
 class Video(object):
     def __init__(self, filepath, video_parser):
@@ -529,27 +578,48 @@ def main():
 
     print("testing grab_matchdata")
     matchdata_frame = cv.imread('scene_reference/match_tvp/1.png')
-    print(grab_matchdata2(matchdata_frame, 'T', 'P', debug=True))
+    player_a_race, player_b_race = reference_frames.matchrace(matchdata_frame)
+    print(grab_matchdata2(matchdata_frame, player_a_race, player_b_race, debug=True))
+
     matchdata_frame = cv.imread('scene_reference/match_tvp/2.png')
-    print(grab_matchdata2(matchdata_frame, 'T', 'P', debug=True))
+    player_a_race, player_b_race = reference_frames.matchrace(matchdata_frame)
+    print(grab_matchdata2(matchdata_frame, player_a_race, player_b_race, debug=True))
+
     matchdata_frame = cv.imread('scene_reference/match_tvp/3.png')
-    print(grab_matchdata2(matchdata_frame, 'T', 'P', debug=True))
+    player_a_race, player_b_race = reference_frames.matchrace(matchdata_frame)
+    print(grab_matchdata2(matchdata_frame, player_a_race, player_b_race, debug=True))
+
     matchdata_frame = cv.imread('scene_reference/match_pvt/1.png')
-    print(grab_matchdata2(matchdata_frame, 'P', 'T', debug=True))
+    player_a_race, player_b_race = reference_frames.matchrace(matchdata_frame)
+    print(grab_matchdata2(matchdata_frame, player_a_race, player_b_race, debug=True))
+
     matchdata_frame = cv.imread('scene_reference/match_pvt/2.png')
-    print(grab_matchdata2(matchdata_frame, 'P', 'T', debug=True))
+    player_a_race, player_b_race = reference_frames.matchrace(matchdata_frame)
+    print(grab_matchdata2(matchdata_frame, player_a_race, player_b_race, debug=True))
+
     matchdata_frame = cv.imread('scene_reference/match_tvz/1.png')
-    print(grab_matchdata2(matchdata_frame, 'T', 'Z', debug=True))
+    player_a_race, player_b_race = reference_frames.matchrace(matchdata_frame)
+    print(grab_matchdata2(matchdata_frame, player_a_race, player_b_race, debug=True))
+
     matchdata_frame = cv.imread('scene_reference/match_tvz/2.png')
-    print(grab_matchdata2(matchdata_frame, 'T', 'Z', debug=True))
+    player_a_race, player_b_race = reference_frames.matchrace(matchdata_frame)
+    print(grab_matchdata2(matchdata_frame, player_a_race, player_b_race, debug=True))
+
     matchdata_frame = cv.imread('scene_reference/match_tvz/3.png')
-    print(grab_matchdata2(matchdata_frame, 'T', 'Z', debug=True))
+    player_a_race, player_b_race = reference_frames.matchrace(matchdata_frame)
+    print(grab_matchdata2(matchdata_frame, player_a_race, player_b_race, debug=True))
+
     matchdata_frame = cv.imread('scene_reference/match_tvz/5.png')
-    print(grab_matchdata2(matchdata_frame, 'T', 'Z', debug=True))
+    player_a_race, player_b_race = reference_frames.matchrace(matchdata_frame)
+    print(grab_matchdata2(matchdata_frame, player_a_race, player_b_race, debug=True))
+
     matchdata_frame = cv.imread('scene_reference/match_zvt/1.png')
-    print(grab_matchdata2(matchdata_frame, 'Z', 'T', debug=True))
+    player_a_race, player_b_race = reference_frames.matchrace(matchdata_frame)
+    print(grab_matchdata2(matchdata_frame, player_a_race, player_b_race, debug=True))
+
     matchdata_frame = cv.imread('scene_reference/match_tvt/1.png')
-    print(grab_matchdata2(matchdata_frame, 'T', 'T', debug=True))
+    player_a_race, player_b_race = reference_frames.matchrace(matchdata_frame)
+    print(grab_matchdata2(matchdata_frame, player_a_race, player_b_race, debug=True))
     print("testing grab_pointsdata")
     pointsdata_frame = cv.imread('scene_reference/points_victory/1.png')
     print(grab_pointsdata(pointsdata_frame))
