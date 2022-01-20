@@ -83,7 +83,8 @@ NAME_PATTERNS = {'artosis': 'artosis',
                  'arto': 'artosis',
                  'valks': 'artosis',
                  'canadadry': 'artosis',
-                 'artasis': 'artosis'}
+                 'artasis': 'artosis',
+                 'newgear': 'artosis'}
 
 MAP_PATTERNS = {'polypoid': 'polypoid',
                 'potypoid': 'polypoid',
@@ -264,6 +265,7 @@ class VideoParser(object):
     UNKNOWN_THRESHOLD = 0.2
     # heuristic value to separate match screens
     MATCH_TIMEOUT = 30000 # msec
+    POSTGAME_TIMEOUT = 60000 # msec
     # time to dwell on a point of interest for frameskip
     POI_INTERVAL = 1000 #msec
     TARGET_FRAMES = 200
@@ -277,9 +279,6 @@ class VideoParser(object):
         self.debug_dump = debug_dump
         self.framecounter = 0
         self.unknown_count = 0
-        self.last_match_time = None
-        # whether current frame is interesting
-        self.poi = False
 
     def setdate(self, date):
         self.date = date
@@ -290,7 +289,10 @@ class VideoParser(object):
         self.points_results = list()
         self.turnrate_results = list()
         self.last_match_time = None
+        self.last_postgame_time = None
         self.gameframe = False
+        # whether current frame is interesting
+        self.poi = False
 
     def savegame(self):
         def aggregate(values, canonical=None):
@@ -401,7 +403,13 @@ class VideoParser(object):
             if self.last_match_time is None:
                 print("WARNING: postgame without match, skipping...", time)
             elif len(self.postgame_results) < self.TARGET_FRAMES or self.framecounter % self.POSTGAME_FRAMESKIP == 0:
-                self.postgame_results.append(grab_postgamedata(frame, self.debug))
+                postgame_result = grab_postgamedata(frame, self.debug)
+                if postgame_result is not None:
+                    if self.last_postgame_time is None:
+                        self.last_postgame_time = time
+                    elif (time - self.last_postgame_time) > self.POSTGAME_TIMEOUT:
+                        print("WARNING: past postgame timeout, skipping...", time)
+                    self.postgame_results.append(postgame_result)
         elif 'points' in frametype:
             self.poi = time
             if self.debug:
