@@ -122,7 +122,7 @@ def grab_matchdata2(frame, player_a_race, player_b_race, debug=False, online_deb
         map_text = pytesseract.image_to_string(map_name_threshold, config='--psm 7').strip()
         map_text = map_canonicalizer.canonicalize(map_text)
         if online_debug and not map_canonicalizer.matched(map_text):
-            cv.imwrite(f'map_unmatched{DEBUG_ITER}.png', frame)
+            cv.imwrite(f'map_unmatched{DEBUG_ITER}_{map_text}.png', frame)
             DEBUG_ITER += 1
         if debug:
             cv.imwrite(f'2{DEBUG_ITER}mask.png', mask)
@@ -265,7 +265,7 @@ class VideoParser(object):
     UNKNOWN_THRESHOLD = 0.2
     # heuristic value to separate match screens
     MATCH_TIMEOUT = 30000 # msec
-    POSTGAME_TIMEOUT = 60000 # msec
+    POSTGAME_TIMEOUT = 90000 # msec
     # time to dwell on a point of interest for frameskip
     POI_INTERVAL = 1000 #msec
     TARGET_FRAMES = 200
@@ -391,6 +391,7 @@ class VideoParser(object):
                 self.last_match_time = time
             elif (time - self.last_match_time) > self.MATCH_TIMEOUT:
                 self.savegame()
+                self.poi = time
                 self.last_match_time = time
             if len(self.match_results) < self.TARGET_FRAMES or self.framecounter % self.MATCH_FRAMESKIP == 0:
                 DEBUG_ITER = int(time/1000)
@@ -533,8 +534,8 @@ class ReferenceFrames(object):
                     maxscore = score
             max_scores.append((frametype, maxscore))
         player_a_race = sorted(max_scores, key=lambda item: item[1], reverse=True)[0]
-        if player_a_race[1] < 0.65:
-            cv.imwrite(f'racedebuga_{DEBUG_ITER}.png', frame)
+        if player_a_race[1] < 0.5:
+            cv.imwrite(f'racedebuga_{DEBUG_ITER}_{player_a_race[1]*100}.png', frame)
             DEBUG_ITER += 1 
         player_a_race = player_a_race[0]
         max_scores = list()
@@ -546,8 +547,8 @@ class ReferenceFrames(object):
                     maxscore = score
             max_scores.append((frametype, maxscore))
         player_b_race = sorted(max_scores, key=lambda item: item[1], reverse=True)[0]
-        if player_b_race[1] < 0.65:
-            cv.imwrite(f'racedebugb_{DEBUG_ITER}.png', frame)
+        if player_b_race[1] < 0.5:
+            cv.imwrite(f'racedebugb_{DEBUG_ITER}_{player_b_race[1]*100}.png', frame)
             DEBUG_ITER += 1 
         player_b_race = player_b_race[0]
         return player_a_race, player_b_race
@@ -581,9 +582,7 @@ class Video(object):
 
 def main():
     reference_frames = ReferenceFrames('scene_reference')
-    reference_frames.match(cv.imread('postgame2.png'), debug=True)
-    print(grab_postgamedata(cv.imread('postgame2.png'), debug=True))
-
+    print(reference_frames.match(cv.imread('2.png')))
     print("testing grab_matchdata")
     matchdata_frame = cv.imread('scene_reference/match_tvp/1.png')
     player_a_race, player_b_race = reference_frames.matchrace(matchdata_frame)
@@ -632,6 +631,8 @@ def main():
     pointsdata_frame = cv.imread('scene_reference/points_victory/1.png')
     print(grab_pointsdata(pointsdata_frame))
     pointsdata_frame = cv.imread('scene_reference/points_defeat/1.png')
+    print(grab_pointsdata(pointsdata_frame))
+    pointsdata_frame = cv.imread('scene_reference/points_defeat/2.png')
     print(grab_pointsdata(pointsdata_frame))
     pointsdata_frame = cv.imread('scene_reference/points_pending/1.png')
     print(grab_pointsdata(pointsdata_frame))
