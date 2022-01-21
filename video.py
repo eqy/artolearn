@@ -408,9 +408,10 @@ class VideoParser(object):
                 if postgame_result is not None:
                     if self.last_postgame_time is None:
                         self.last_postgame_time = time
-                    elif (time - self.last_postgame_time) > self.POSTGAME_TIMEOUT:
+                    if (time - self.last_postgame_time) > self.POSTGAME_TIMEOUT:
                         print("WARNING: past postgame timeout, skipping...", time)
-                    self.postgame_results.append(postgame_result)
+                    else:
+                        self.postgame_results.append(postgame_result)
         elif 'points' in frametype:
             self.poi = time
             if self.debug:
@@ -418,7 +419,14 @@ class VideoParser(object):
             if self.last_match_time is None:
                 print("WARNING: points without match, skipping...", time)
             elif len(self.points_results) < self.TARGET_FRAMES or self.framecounter % self.POINTS_FRAMESKIP == 0:
-                self.points_results.append(grab_pointsdata(frame))
+                points_result = grab_pointsdata(frame)
+                if points_result is not None:
+                    if self.last_postgame_time is None:
+                        self.last_postgame_time = time
+                    if (time - self.last_postgame_time) > self.POSTGAME_TIMEOUT:
+                        print("WARNING: past postgame timeout, skipping...", time)
+                    else:
+                        self.points_results.append(points_result)
         elif 'game' in frametype:
             self.gameframe = True
             if len(self.turnrate_results) < self.TARGET_FRAMES or self.framecounter % self.TURNRATE_FRAMESKIP == 0:
