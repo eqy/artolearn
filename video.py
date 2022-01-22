@@ -14,7 +14,7 @@ from skimage.metrics import peak_signal_noise_ratio as psnr
 
 DEBUG_ITER = 0
 
-cv.setNumThreads(4)
+# cv.setNumThreads(4)
 
 def crop(img, ry0, rx0, ry1, rx1):
     height = img.shape[0]
