@@ -1,7 +1,8 @@
 import csv
+import os
 import re
 import random
-import os
+import time
 
 from PIL import Image
 import cv2 as cv
@@ -24,6 +25,11 @@ def cropframe(frame, height, width):
     CROP_START = (0, 0) #ry1, rx1
     CROP_REL = (1080/1080, 1520/1920) #ry1, rx1
     return crop(frame, 0, 0, CROP_REL[0], CROP_REL[1])
+
+def resized_ssim(img1, img2):
+    img1r = cv.resize(img1, (64, 64))
+    img2r = cv.resize(img2, (64, 64))
+    return ssim(img1r, img2r)
 
 def threshold(img, boundary=56):
     BASEHEIGHT = 128
@@ -84,7 +90,8 @@ NAME_PATTERNS = {'artosis': 'artosis',
                  'valks': 'artosis',
                  'canadadry': 'artosis',
                  'artasis': 'artosis',
-                 'newgear': 'artosis'}
+                 'newgear': 'artosis',
+                 'didntmake': 'artosis'}
 
 MAP_PATTERNS = {'polypoid': 'polypoid',
                 'potypoid': 'polypoid',
@@ -265,7 +272,7 @@ class VideoParser(object):
     UNKNOWN_THRESHOLD = 0.2
     # heuristic value to separate match screens
     MATCH_TIMEOUT = 30000 # msec
-    POSTGAME_TIMEOUT = 90000 # msec
+    POSTGAME_TIMEOUT = 120000 # msec
     # time to dwell on a point of interest for frameskip
     POI_INTERVAL = 1000 #msec
     TARGET_FRAMES = 200
@@ -279,6 +286,8 @@ class VideoParser(object):
         self.debug_dump = debug_dump
         self.framecounter = 0
         self.unknown_count = 0
+        self.timers = {'match': 0, 'postgame': 0, 'postgame': 0, 'game': 0, 'replay': 0, 'misc': 0}
+        self.starttime = None
 
     def setdate(self, date):
         self.date = date
@@ -364,6 +373,19 @@ class VideoParser(object):
             self.games.append(game_data)
         self.cleargame()
 
+    def starttimer(self):
+        assert self.starttime is None
+        self.starttime = time.time()
+
+    def endtimer(self, frametype):
+        assert self.starttime is not None
+        delta = time.time() - self.starttime
+        self.starttime = None
+        for key in self.timers.keys():
+            if key in frametype:
+                self.timers[key] += delta
+                break
+
     def step(self, capture):
         global DEBUG_ITER
         time = capture.get(cv.CAP_PROP_POS_MSEC)
@@ -379,6 +401,7 @@ class VideoParser(object):
             assert ret
 
         frametype, sim = self.reference_frames.match(frame)
+        self.starttimer()
         if self.debug:
             print(frametype, time)
         if sim < self.UNKNOWN_THRESHOLD:
@@ -432,6 +455,7 @@ class VideoParser(object):
             if len(self.turnrate_results) < self.TARGET_FRAMES or self.framecounter % self.TURNRATE_FRAMESKIP == 0:
                 self.turnrate_results.append(grab_turnrate(frame))
         self.framecounter += 1
+        self.endtimer(frametype)
 
     def compute_features(self):
         # compute win-l, per-MU w/l
@@ -443,6 +467,9 @@ class VideoParser(object):
         vt_losses = 0
         vz_wins = 0
         vz_losses = 0
+        # currently unused
+        vr_wins = 0
+        vr_losses = 0
         for idx, game in enumerate(self.games):
             feature_tuple = (wins, losses, wins - losses,
                              vp_wins, vp_losses, vp_wins - vp_losses,
@@ -458,6 +485,8 @@ class VideoParser(object):
                         vt_wins += 1
                     elif game[8] == 'Z':
                         vz_wins += 1
+                    elif game[8] == 'R':
+                        vr_wins += 1
                     else:
                         assert False, "race unknown"
             elif game[-1] == 'defeat':
@@ -469,12 +498,15 @@ class VideoParser(object):
                         vt_losses += 1
                     elif game[8] == 'Z':
                         vz_losses += 1
+                    elif game[8] == 'R':
+                        vr_wins += 0
                     else:
                         assert False, "race unknown" 
 
     def report(self):
         self.savegame()
         self.compute_features()
+        print(self.timers)
         return self.games
 
 class ReferenceFrames(object):
@@ -537,7 +569,8 @@ class ReferenceFrames(object):
         for frametype in self.racetoplayer_a_frames.keys():
             maxscore = -1
             for reference_frame in self.racetoplayer_a_frames[frametype]:
-                score = ssim(player_a_crop, crop(reference_frame, *PLAYER_A_BBOX))
+                # score = ssim(player_a_crop, crop(reference_frame, *PLAYER_A_BBOX))
+                score = resized_ssim(player_a_crop, crop(reference_frame, *PLAYER_A_BBOX))
                 if score > maxscore:
                     maxscore = score
             max_scores.append((frametype, maxscore))
