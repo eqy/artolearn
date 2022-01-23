@@ -19,6 +19,9 @@ TODOS:
 + (done) race detection rather than relying on scenes
 + milestone: no manual interventions on two unseen VODs
 + milestone: no outrageous data errors on two unseen VODs
++ warnings in hh::mm::ss
++ username features? count #{aeiou}/total?
++ (done) progressbar
 + (done) add holiday edition queue reference image
 + implement csv output
 + implement csv merging

@@ -12,6 +12,8 @@ import pytesseract
 from skimage.metrics import structural_similarity as ssim
 from skimage.metrics import peak_signal_noise_ratio as psnr
 
+from progress.bar import Bar
+
 DEBUG_ITER = 0
 
 # cv.setNumThreads(4)
@@ -609,10 +611,12 @@ class Video(object):
 
     def parse(self):
         frame_num = 0
+        progressbar = Bar('Parsing', max=self.frame_count)
         while self.cap.isOpened():
             if frame_num >= self.frame_count:
                 break
             self.video_parser.step(self.cap)
+            progressbar.next()
             frame_num += 1
         self.parsed = True
 
