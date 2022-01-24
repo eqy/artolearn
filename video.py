@@ -18,6 +18,14 @@ DEBUG_ITER = 0
 
 # cv.setNumThreads(4)
 
+def mstotime(ms):
+    hours = int(ms // 3600000)
+    ms -= hours * 3600000
+    minutes = int(ms // 60000)
+    ms -= minutes * 60000
+    seconds = int(ms // 1000)
+    return f'{hours:02d}:{minutes:02d}:{seconds:02d}'
+
 def crop(img, ry0, rx0, ry1, rx1):
     height = img.shape[0]
     width = img.shape[1]
@@ -29,8 +37,8 @@ def cropframe(frame, height, width):
     return crop(frame, 0, 0, CROP_REL[0], CROP_REL[1])
 
 def resized_ssim(img1, img2):
-    img1r = cv.resize(img1, (64, 64))
-    img2r = cv.resize(img2, (64, 64))
+    img1r = cv.resize(img1, (32, 32))
+    img2r = cv.resize(img2, (32, 32))
     return ssim(img1r, img2r)
 
 def threshold(img, boundary=56):
@@ -327,9 +335,9 @@ class VideoParser(object):
             return
         else:
             if not self.gameframe:
-                print(f"WARNING, trying to save game without any gameframes @{self.last_match_time}")
+                print(f"WARNING, trying to save game without any gameframes @{mstotime(self.last_match_time)}")
             if len(self.postgame_results) == 0 and len(self.points_results) == 0:
-                print(f"WARNING, no result! @{self.last_match_time}")
+                print(f"WARNING, no result! @{mstotime(self.last_match_time)}")
                 self.cleargame()
                 return
         print(len(self.match_results), len(self.points_results),
@@ -410,7 +418,7 @@ class VideoParser(object):
             self.unknown_count += 1
         elif 'match' in frametype:
             if not self.poi or (time - self.poi > self.POI_INTERVAL):
-                print(frametype, time)
+                print(frametype, mstotime(time))
             self.poi = time
             if self.last_match_time is None:
                 self.last_match_time = time
@@ -427,29 +435,29 @@ class VideoParser(object):
             if self.debug:
                 print("postgame", time)
             if self.last_match_time is None:
-                print("WARNING: postgame without match, skipping...", time)
+                print("WARNING: postgame without match, skipping...", mstotime(time))
             elif len(self.postgame_results) < self.TARGET_FRAMES or self.framecounter % self.POSTGAME_FRAMESKIP == 0:
                 postgame_result = grab_postgamedata(frame, self.debug)
                 if postgame_result is not None:
                     if self.last_postgame_time is None:
                         self.last_postgame_time = time
                     if (time - self.last_postgame_time) > self.POSTGAME_TIMEOUT:
-                        print("WARNING: past postgame timeout, skipping...", time)
+                        print("WARNING: past postgame timeout, skipping...", mstotime(time))
                     else:
                         self.postgame_results.append(postgame_result)
         elif 'points' in frametype:
             self.poi = time
             if self.debug:
-                print("postgame", time)
+                print("postgame", mstotime(time))
             if self.last_match_time is None:
-                print("WARNING: points without match, skipping...", time)
+                print("WARNING: points without match, skipping...", mstotime(time))
             elif len(self.points_results) < self.TARGET_FRAMES or self.framecounter % self.POINTS_FRAMESKIP == 0:
                 points_result = grab_pointsdata(frame)
                 if points_result is not None:
                     if self.last_postgame_time is None:
                         self.last_postgame_time = time
                     if (time - self.last_postgame_time) > self.POSTGAME_TIMEOUT:
-                        print("WARNING: past postgame timeout, skipping...", time)
+                        print("WARNING: past postgame timeout, skipping...", mstotime(time))
                     else:
                         self.points_results.append(points_result)
         elif 'game' in frametype:
@@ -459,60 +467,60 @@ class VideoParser(object):
         self.framecounter += 1
         self.endtimer(frametype)
 
-    def compute_features(self):
-        # compute win-l, per-MU w/l
-        wins = 0
-        losses = 0
-        vp_wins = 0
-        vp_losses = 0
-        vt_wins = 0
-        vt_losses = 0
-        vz_wins = 0
-        vz_losses = 0
-        # currently unused
-        vr_wins = 0
-        vr_losses = 0
-        for idx, game in enumerate(self.games):
-            feature_tuple = (wins, losses, wins - losses,
-                             vp_wins, vp_losses, vp_wins - vp_losses,
-                             vt_wins, vt_losses, vt_wins - vt_losses,
-                             vz_wins, vz_losses, vz_wins - vz_losses)
-            self.games[idx] = game + feature_tuple
-            if game[-1] == 'victory':
-                wins += 1
-                if game[8] is not None:
-                    if game[8] == 'P':
-                        vp_wins += 1
-                    elif game[8] == 'T':
-                        vt_wins += 1
-                    elif game[8] == 'Z':
-                        vz_wins += 1
-                    elif game[8] == 'R':
-                        vr_wins += 1
-                    else:
-                        assert False, "race unknown"
-            elif game[-1] == 'defeat':
-                losses += 1 
-                if game[8] is not None:
-                    if game[8] == 'P':
-                        vp_losses += 1
-                    elif game[8] == 'T':
-                        vt_losses += 1
-                    elif game[8] == 'Z':
-                        vz_losses += 1
-                    elif game[8] == 'R':
-                        vr_wins += 0
-                    else:
-                        assert False, "race unknown" 
+    #def compute_features(self):
+    #    # compute win-l, per-MU w/l
+    #    wins = 0
+    #    losses = 0
+    #    vp_wins = 0
+    #    vp_losses = 0
+    #    vt_wins = 0
+    #    vt_losses = 0
+    #    vz_wins = 0
+    #    vz_losses = 0
+    #    # currently unused
+    #    vr_wins = 0
+    #    vr_losses = 0
+    #    for idx, game in enumerate(self.games):
+    #        feature_tuple = (wins, losses, wins - losses,
+    #                         vp_wins, vp_losses, vp_wins - vp_losses,
+    #                         vt_wins, vt_losses, vt_wins - vt_losses,
+    #                         vz_wins, vz_losses, vz_wins - vz_losses)
+    #        self.games[idx] = game + feature_tuple
+    #        if game[-1] == 'victory':
+    #            wins += 1
+    #            if game[8] is not None:
+    #                if game[8] == 'P':
+    #                    vp_wins += 1
+    #                elif game[8] == 'T':
+    #                    vt_wins += 1
+    #                elif game[8] == 'Z':
+    #                    vz_wins += 1
+    #                elif game[8] == 'R':
+    #                    vr_wins += 1
+    #                else:
+    #                    assert False, "race unknown"
+    #        elif game[-1] == 'defeat':
+    #            losses += 1 
+    #            if game[8] is not None:
+    #                if game[8] == 'P':
+    #                    vp_losses += 1
+    #                elif game[8] == 'T':
+    #                    vt_losses += 1
+    #                elif game[8] == 'Z':
+    #                    vz_losses += 1
+    #                elif game[8] == 'R':
+    #                    vr_wins += 0
+    #                else:
+    #                    assert False, "race unknown" 
 
     def report(self):
         self.savegame()
-        self.compute_features()
+        # self.compute_features()
         print(self.timers)
         return self.games
 
 class ReferenceFrames(object):
-    SSIM_RESOLUTION = (128, 128) #y, x
+    SSIM_RESOLUTION = (64, 64) #y, x
 
     def __init__(self, filepath):
         self.filepath = filepath
