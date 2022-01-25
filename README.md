@@ -17,14 +17,16 @@ TODOS:
 + (done) implement video parsing data return for VOD
 + (done) implement computed features
 + (done) race detection rather than relying on scenes
-+ milestone: no manual interventions on two unseen VODs
-+ milestone: no outrageous data errors on two unseen VODs
-+ warnings in hh::mm::ss
++ (done) milestone: no manual interventions on two unseen VODs
++ (done) milestone: no outrageous data errors on two unseen VODs
++ (done) warnings in hh::mm::ss
 + username features? count #{aeiou}/total?
 + (done) progressbar
 + (done) add holiday edition queue reference image
-+ implement csv output
++ (done) add random reference
++ (done) implement csv output
 + implement csv merging
++ implement baseline statistics (based on winrates)
 + implement feature encoding incl. categorical to one-hot
 + implement cross-validation
 + model parameter tuning if cross-validation looks good
