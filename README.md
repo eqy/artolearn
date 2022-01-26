@@ -25,9 +25,9 @@ TODOS:
 + (done) add holiday edition queue reference image
 + (done) add random reference
 + (done) implement csv output
-+ implement csv merging
++ (done) implement csv merging
 + implement baseline statistics (based on winrates)
-+ implement feature encoding incl. categorical to one-hot
++ (done) implement feature encoding incl. categorical to one-hot
 + implement cross-validation
 + model parameter tuning if cross-validation looks good
 + feature ablation study if model parameter tuning looks good

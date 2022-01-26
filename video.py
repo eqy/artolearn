@@ -633,7 +633,7 @@ class Video(object):
             self.parse()
         return self.video_parser.report()
 
-def main():
+def test():
     reference_frames = ReferenceFrames('scene_reference')
     print(reference_frames.match(cv.imread('2.png')))
     print("testing grab_matchdata")
@@ -708,4 +708,4 @@ def main():
     print("OK")
 
 if __name__ == '__main__':
-    main()
+    test()
