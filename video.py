@@ -358,6 +358,15 @@ class VideoParser(object):
         player_b_result = tuple(aggregate(result) for result in player_b_results)
         player_a_artosis = name_canonicalizer.matched(player_a_result[0])
         player_b_artosis = name_canonicalizer.matched(player_b_result[0])
+        if not(player_a_artosis) and not(player_b_artosis):
+            if player_a_result[3] == 'T' and player_b_result[3] != 'T':
+                print(f"WARNING: guessing artosis name based on race... @{mstotime(self.last_match_time)}")
+                player_a_result[0] = "guessartosis"
+                player_a_artosis = True
+            elif player_b_result[3] == 'T' and player_a_result[3] != 'T':
+                print(f"WARNING: guessing artosis name based on race... @{mstotime(self.last_match_time)}")
+                player_b_result[0] = "guessartosis"
+                player_b_artosis = True
 
         map_result = aggregate(map_results, map_canonicalizer.matched)
         trs, lats = zip(*self.turnrate_results)
@@ -366,7 +375,7 @@ class VideoParser(object):
         outcome_result = aggregate(outcome_results)
 
         if not(player_a_artosis) and not(player_b_artosis):
-            print(f"WARNING: unable to find artosis in: {player_a_result[0]}, {player_b_result[0]}, skipping...")
+            print(f"WARNING: unable to find artosis in: {player_a_result[0]}, {player_b_result[0]}, skipping... @{mstotime(self.last_match_time)}")
         elif player_a_artosis and player_b_artosis:
             print("WARNING: double artosis, skipping...")
         else:

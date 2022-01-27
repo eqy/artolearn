@@ -166,13 +166,16 @@ def test():
             if len(race_dataframe) == 0:
                 continue
             victory_dataframe = race_dataframe[race_dataframe['outcome'] == 'victory']
+            printrank = rank
             if rank == '':
-                rank = 'unranked'
+                printrank = 'unranked'
             winrate = len(victory_dataframe)/len(race_dataframe)
             total_count += len(race_dataframe)
             total += len(race_dataframe) * max(winrate, 1-winrate) 
-            print(f"{rank} {race}: {winrate}")
+            print(f"{printrank} {race}: {winrate}")
     print(f"race+rank baseline: {total/total_count} {total_count}")
+    pd.set_option("display.max_rows", 300, "display.max_columns", 4)
+    print(dataset.dataframe)
     print("OK")
             
 if __name__ == '__main__':
