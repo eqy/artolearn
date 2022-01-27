@@ -26,7 +26,7 @@ TODOS:
 + (done) add random reference
 + (done) implement csv output
 + (done) implement csv merging
-+ implement baseline statistics (based on winrates)
++ (done) implement baseline statistics (based on winrates)
 + (done) implement feature encoding incl. categorical to one-hot
 + implement cross-validation
 + model parameter tuning if cross-validation looks good

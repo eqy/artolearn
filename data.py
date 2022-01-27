@@ -127,8 +127,52 @@ def test():
     dataset = Dataset(rawdataset)
     #print(dataset.data)
     #print(dataset.labels)
-    print(dataset.one_hot)
-    print(dataset.labels)
+    print("baselines...")
+    victory_dataframe = dataset.dataframe[dataset.dataframe['outcome'] == 'victory']
+    print("global winrate:", len(victory_dataframe)/len(dataset.dataframe))
+    opponent_races = dataset.dataframe['player_b_race'].unique()
+    opponent_ranks = dataset.dataframe['player_b_rank'].unique()
+    print("per rank winrates")
+    total_count = 0
+    total = 0
+    for rank in opponent_ranks:
+        rank_dataframe = dataset.dataframe[dataset.dataframe['player_b_rank'] == rank]
+        victory_dataframe = rank_dataframe[rank_dataframe['outcome'] == 'victory']
+        if rank == '':
+            rank = 'unranked'
+        winrate = len(victory_dataframe)/len(rank_dataframe)
+        print(f"{rank}: {winrate}")
+        total_count += len(rank_dataframe)
+        total += len(rank_dataframe) * max(winrate, 1-winrate)
+    print(f"rank baseline: {total/total_count} {total_count}")
+    total_count = 0
+    total = 0
+    print("per race winrates")
+    for race in opponent_races:
+        race_dataframe = dataset.dataframe[dataset.dataframe['player_b_race'] == race]
+        victory_dataframe = race_dataframe[race_dataframe['outcome'] == 'victory']
+        winrate = len(victory_dataframe)/len(race_dataframe)
+        print(f"{race}: {winrate}")
+        total_count += len(race_dataframe)
+        total += len(race_dataframe) * max(winrate, 1-winrate)
+    print(f"race baseline: {total/total_count} {total_count}")
+    total_count = 0
+    total = 0
+    print("per race+rank winrates")
+    for rank in opponent_ranks:
+        for race in opponent_races:
+            rank_dataframe = dataset.dataframe[dataset.dataframe['player_b_rank'] == rank]
+            race_dataframe = rank_dataframe[rank_dataframe['player_b_race'] == race]
+            if len(race_dataframe) == 0:
+                continue
+            victory_dataframe = race_dataframe[race_dataframe['outcome'] == 'victory']
+            if rank == '':
+                rank = 'unranked'
+            winrate = len(victory_dataframe)/len(race_dataframe)
+            total_count += len(race_dataframe)
+            total += len(race_dataframe) * max(winrate, 1-winrate) 
+            print(f"{rank} {race}: {winrate}")
+    print(f"race+rank baseline: {total/total_count} {total_count}")
     print("OK")
             
 if __name__ == '__main__':
