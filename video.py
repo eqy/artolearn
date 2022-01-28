@@ -387,7 +387,7 @@ class VideoParser(object):
                 player_results = player_b_result + player_a_result
             if player_results[3] != 'T':
                 print("WARNING: artosis was not terran...")
-            game_data = (self.date,) + player_results + (map_result, tr_result, lat_result, self.last_match_time/1000, outcome_result)
+            game_data = [self.date] + player_results + [map_result, tr_result, lat_result, self.last_match_time/1000, outcome_result]
             print(game_data) 
             self.games.append(game_data)
         self.cleargame()
