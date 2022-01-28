@@ -354,18 +354,18 @@ class VideoParser(object):
         player_a_results = (player_a_names, player_a_ranks, player_a_mmrs, player_a_races)
         player_b_results = (player_b_names, player_b_ranks, player_b_mmrs, player_b_races)
 
-        player_a_result = tuple(aggregate(result) for result in player_a_results)
-        player_b_result = tuple(aggregate(result) for result in player_b_results)
+        player_a_result = [aggregate(result) for result in player_a_results]
+        player_b_result = [aggregate(result) for result in player_b_results]
         player_a_artosis = name_canonicalizer.matched(player_a_result[0])
         player_b_artosis = name_canonicalizer.matched(player_b_result[0])
         if not(player_a_artosis) and not(player_b_artosis):
             if player_a_result[3] == 'T' and player_b_result[3] != 'T':
                 print(f"WARNING: guessing artosis name based on race... @{mstotime(self.last_match_time)}")
-                player_a_result[0] = "guessartosis"
+                player_a_result[0] = "guessed_artosis"
                 player_a_artosis = True
             elif player_b_result[3] == 'T' and player_a_result[3] != 'T':
                 print(f"WARNING: guessing artosis name based on race... @{mstotime(self.last_match_time)}")
-                player_b_result[0] = "guessartosis"
+                player_b_result[0] = "guessed_artosis"
                 player_b_artosis = True
 
         map_result = aggregate(map_results, map_canonicalizer.matched)
