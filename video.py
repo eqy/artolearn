@@ -2,6 +2,7 @@ import csv
 import os
 import re
 import random
+import string
 import time
 
 from PIL import Image
@@ -76,6 +77,13 @@ def plausible_mmr(player_mmr, player_rank):
     if player_rank is None: # LOL
         return player_mmr > 1600 and player_mmr < 3001
     return player_mmr >= RANK_RANGES[player_rank][0] and player_mmr <= RANK_RANGES[player_rank][1]
+
+def azcount(s):
+    count = 0
+    for char in s.lower():
+        if char in string.ascii_lowercase:
+            count += 1
+    return count
 
 class Canonicalizer(object):
     def __init__(self, patterns):
@@ -361,11 +369,19 @@ class VideoParser(object):
         if not(player_a_artosis) and not(player_b_artosis):
             if player_a_result[3] == 'T' and player_b_result[3] != 'T':
                 print(f"WARNING: guessing artosis name based on race... @{mstotime(self.last_match_time)}")
-                player_a_result[0] = "guessed_artosis"
+                player_a_result[0] = "guessedrace_artosis"
                 player_a_artosis = True
             elif player_b_result[3] == 'T' and player_a_result[3] != 'T':
                 print(f"WARNING: guessing artosis name based on race... @{mstotime(self.last_match_time)}")
-                player_b_result[0] = "guessed_artosis"
+                player_b_result[0] = "guessedrace_artosis"
+                player_b_artosis = True
+            elif azcount(player_a_result[0]) == 0 and azcount(player_b_result[0]) > 0:
+                print(f"WARNING: guessing artosis name based on az... @{mstotime(self.last_match_time)}")
+                player_a_result[0] = "guessedazcount_artosis"
+                player_a_artosis = True
+            elif azcount(player_b_result[0]) == 0 and azcount(player_a_result[0]) > 0:
+                print(f"WARNING: guessing artosis name based on az... @{mstotime(self.last_match_time)}")
+                player_b_result[0] = "guessedazcount_artosis"
                 player_b_artosis = True
 
         map_result = aggregate(map_results, map_canonicalizer.matched)

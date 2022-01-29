@@ -101,7 +101,6 @@ class Dataset(object):
         data_lists = [list() for _ in range(columns)]
         for stream_session_data in self.stream_session_data_list:
             for row in stream_session_data.data:
-                print(row)
                 assert len(row) == columns
                 for idx, value in enumerate(row):
                     try:
@@ -112,11 +111,10 @@ class Dataset(object):
         column_labels = constants.SCHEMA + [f'feature{i}' for i in range(0, columns - constants.SCHEMA_LEN)]
         data_dict = {label:data_lists[i] for i,label in enumerate(column_labels)}
         self.dataframe = pd.DataFrame(data_dict)
-        self.labels = pd.get_dummies(self.dataframe['outcome'], drop_first=True)
-        self.one_hot = pd.get_dummies(self.dataframe.drop(labels=['player_a_id', 'player_b_id'], axis=1), drop_first=True)
+        self.labels = pd.get_dummies(self.dataframe['outcome'], drop_first=True, dtype=bool)
+        self.one_hot = pd.get_dummies(self.dataframe.drop(labels=['player_a_id', 'player_b_id'], axis=1), drop_first=True, dtype=bool)
 
-def test():
-    data = StreamSessionData('data/2021-12-23.csv')
+def load_dir(path):
     rawdataset = list()
     for dirpath, _, filenames in os.walk('data'):
         for filename in filenames:
@@ -124,7 +122,11 @@ def test():
             if ext == '.csv':
                 data = StreamSessionData(os.path.join(dirpath, filename))
                 rawdataset.append(data)
-    dataset = Dataset(rawdataset)
+    return Dataset(rawdataset)
+
+def test():
+    data = StreamSessionData('data/2021-12-23.csv')
+    dataset = load_dir('data')
     #print(dataset.data)
     #print(dataset.labels)
     print("baselines...")

@@ -28,7 +28,7 @@ TODOS:
 + (done) implement csv merging
 + (done) implement baseline statistics (based on winrates)
 + (done) implement feature encoding incl. categorical to one-hot
-+ implement cross-validation
++ (done) implement cross-validation
 + model parameter tuning if cross-validation looks good
 + feature ablation study if model parameter tuning looks good
 + history study if feature ablation study looks good
