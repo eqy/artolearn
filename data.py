@@ -57,6 +57,7 @@ class StreamSessionData(object):
         self.data = list()
         for rawdata in self.rawdata:
             rawdata = list(rawdata)
+            #self.data.append(rawdata)
             self.data.append(rawdata + wins + losses + sub(wins, losses) + winstreaks + lossstreaks)
             oppo_race = rawdata[constants.OPPONENT_RACE_IDX]
             result = rawdata[constants.RESULT_IDX]
@@ -127,8 +128,6 @@ def load_dir(path):
 def test():
     data = StreamSessionData('data/2021-12-23.csv')
     dataset = load_dir('data')
-    #print(dataset.data)
-    #print(dataset.labels)
     print("baselines...")
     victory_dataframe = dataset.dataframe[dataset.dataframe['outcome'] == 'victory']
     print("global winrate:", len(victory_dataframe)/len(dataset.dataframe))
