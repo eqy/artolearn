@@ -56,6 +56,8 @@ class StreamSessionData(object):
         race_to_idx = {'p': 1, 't': 2, 'z': 3, 'r': 4}
         self.data = list()
         for rawdata in self.rawdata:
+            rawdata = list(rawdata)
+            self.data.append(rawdata + wins + losses + sub(wins, losses) + winstreaks + lossstreaks)
             oppo_race = rawdata[constants.OPPONENT_RACE_IDX]
             result = rawdata[constants.RESULT_IDX]
             if result == 'victory' or (self.pendingasvictory and result == 'pending'):
@@ -72,10 +74,8 @@ class StreamSessionData(object):
                 winstreaks[race_to_idx[oppo_race]] = 0
                 winstreaks[0] = 0
                 # outcome = 0
-            rawdata = list(rawdata)
             #rawdata[constants.ARTOSIS_NAME_IDX] = None
             #rawdata[constants.OPPONENT_NAME_IDX] = None
-            self.data.append(rawdata + wins + losses + sub(wins, losses) + winstreaks + lossstreaks)
 
 class Dataset(object):
     def __init__(self, stream_session_data_list):
