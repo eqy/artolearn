@@ -10,23 +10,69 @@ import constants
 def sub(l1, l2):
     return [first - second for first, second in zip(l1, l2)]
 
-def splitnumerical(row):
-    numerical = list()
-    categorical = list()
-    for idx, item in enumerate(row):
-        if item is not None:
-            try:
-                value = float(item)
-                numerical.append(value)
-            except ValueError as _:
-                categorical.append(item)
-    return numerical, categorical
+class ResultFeatureTracker(object):
+    def __init__(self, pendingasvictory=True):
+        self.wins = [0, 0, 0, 0, 0]
+        self.losses = [0, 0, 0, 0, 0]
+        self.winstreaks = [0, 0, 0, 0, 0]
+        self.lossstreaks = [0, 0, 0, 0, 0]
+        self.pendingasvictory = pendingasvictory
+
+    def current_features(self):
+        return self.wins + self.losses + self.winstreaks + self.lossstreaks + sub(self.wins, self.losses)
+
+    def update(self, result, race):
+        race_to_idx = {'p': 1, 't': 2, 'z': 3, 'r': 4}
+        if result == 'victory' or (self.pendingasvictory and result == 'pending'):
+            self.wins[0] += 1
+            self.wins[race_to_idx[race]] += 1
+            self.winstreaks[race_to_idx[race]] += 1
+            self.lossstreaks[race_to_idx[race]] = 0
+            self.lossstreaks[0] = 0
+            result = 'victory'
+        else:
+            self.losses[0] += 1
+            self.losses[race_to_idx[race]] += 1
+            self.lossstreaks[race_to_idx[race]] += 1
+            self.winstreaks[race_to_idx[race]] = 0
+            self.winstreaks[0] = 0
+        return result 
+
+def compute_name_features(name):
+    name_vowel_count = 0
+    name_09_count = 0
+    for c in name:
+        if c in 'aeiou':
+            name_vowel_count += 1
+        elif c in '0123456789':
+            name_09_count += 1
+    name_len = len(name)
+    name_features = [name_len,
+                     name_vowel_count/max(1, name_len),
+                     name_09_count/max(1, name_len)]
+    return name_features
+
+def inference_dataframe(inp, history, dataframe):
+    result_feature_tracker = ResultFeatureTracker()
+    for idx in range(0, len(history), 2):
+        result = 'victory' if history[idx+1] == 'w' else 'defeat'
+        race = history[idx]
+        result_feature_tracker.update(result, race)
+    name_features = compute_name_features(inp[constants.OPPONENT_NAME_IDX])
+    curr_row = inp + result_feature_tracker.current_features() + name_features
+    print(curr_row)
+    assert len(curr_row) == len(dataframe.columns), f"mismatched schema {len(curr_row)} {len(dataframe.columns)}"
+    # This looks expensive but this is how it's done in the docs yikes
+    curr_row_df = pd.DataFrame([curr_row], columns=dataframe.columns) 
+    out = pd.concat([dataframe, curr_row_df], axis=0, ignore_index=True)
+    out = pd.get_dummies(out.drop(labels=['player_a_id', 'player_b_id'], axis=1), drop_first=True, dtype=bool)
+    return out
 
 class StreamSessionData(object):
     def __init__(self, filepath, pendingasvictory=True):
         self.filepath = filepath
         assert os.path.exists(filepath) 
-        self.pendingasvictory = pendingasvictory
+        self.result_feature_tracker = ResultFeatureTracker(pendingasvictory)
         self.rawdata = None
         self.load()
         self.compute_features()
@@ -49,34 +95,17 @@ class StreamSessionData(object):
     def compute_features(self):
         assert self.rawdata is not None
         #total, p, t, z, r
-        wins = [0, 0, 0, 0, 0]
-        losses = [0, 0, 0, 0, 0]
-        winstreaks = [0, 0, 0, 0, 0]
-        lossstreaks = [0, 0, 0, 0, 0]
-        race_to_idx = {'p': 1, 't': 2, 'z': 3, 'r': 4}
         self.data = list()
         for rawdata in self.rawdata:
             rawdata = list(rawdata)
-            #self.data.append(rawdata)
-            self.data.append(rawdata + wins + losses + sub(wins, losses) + winstreaks + lossstreaks)
+            oppo_name = rawdata[constants.OPPONENT_NAME_IDX]
+            name_features = compute_name_features(oppo_name)
+            self.data.append(rawdata + self.result_feature_tracker.current_features() + name_features)
             oppo_race = rawdata[constants.OPPONENT_RACE_IDX]
             result = rawdata[constants.RESULT_IDX]
-            if result == 'victory' or (self.pendingasvictory and result == 'pending'):
-                wins[0] += 1
-                wins[race_to_idx[oppo_race]] += 1
-                winstreaks[race_to_idx[oppo_race]] += 1
-                lossstreaks[race_to_idx[oppo_race]] = 0
-                lossstreaks[0] = 0
-                rawdata[constants.RESULT_IDX] = 'victory'
-                # outcome = 1
-            else:
-                losses[0] += 1
-                losses[race_to_idx[oppo_race]] += 1
-                winstreaks[race_to_idx[oppo_race]] = 0
-                winstreaks[0] = 0
-                # outcome = 0
-            #rawdata[constants.ARTOSIS_NAME_IDX] = None
-            #rawdata[constants.OPPONENT_NAME_IDX] = None
+            result = self.result_feature_tracker.update(result, oppo_race)
+            rawdata[constants.RESULT_IDX] = result
+            
 
 class Dataset(object):
     def __init__(self, stream_session_data_list):
@@ -84,20 +113,6 @@ class Dataset(object):
         self.to_one_hot()
 
     def to_one_hot(self):
-        #numerical_data = list()
-        #categorical_data = list()
-        #result = list()
-        #for stream_session_data in self.stream_session_data_list:
-        #    for row in stream_session_data.data:
-        #        numerical, categorical = splitnumerical(row[:-1])
-        #        numerical_data.append(numerical)
-        #        categorical_data.append(categorical)
-        #        result.append(row[-1])
-        #self.encoder = OneHotEncoder(drop='first')
-        #self.encoder.fit(categorical_data)
-        #self.categorical_encoded = self.encoder.transform(categorical_data).toarray()
-        #self.data = np.concatenate((np.array(numerical_data), self.categorical_encoded), axis=1)
-        #self.labels = np.array(result)
         columns = len(self.stream_session_data_list[0].data[0])
         data_lists = [list() for _ in range(columns)]
         for stream_session_data in self.stream_session_data_list:
@@ -177,6 +192,16 @@ def test():
     print(f"race+rank baseline: {total/total_count} {total_count}")
     pd.set_option("display.max_rows", 300, "display.max_columns", 4)
     print(dataset.dataframe)
+    placeholder = [1600000.0,
+                   'artosis', 'a', 2043.0, 't',
+                   'asdffjiej1290381209470', 's', 2390.0, 'z',
+                   'polypoid', 24.0, 'low', 3000.0, 'defeat']
+    print(len(dataset.dataframe.columns))
+    print(len(dataset.dataframe))
+    out_df = inference_dataframe(placeholder, 'zlzlzl', dataset.dataframe)
+    assert len(out_df) == len(dataset.dataframe) + 1
+    #print(out_df)
+    assert len(dataset.one_hot.columns) == len(out_df.columns)
     print("OK")
             
 if __name__ == '__main__':

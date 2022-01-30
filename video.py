@@ -120,7 +120,8 @@ MAP_PATTERNS = {'polypoid': 'polypoid',
                 'good night': 'goodnight',
                 'good': 'goodnight',
                 'largo': 'largo',
-                'larg': 'largo'}
+                'larg': 'largo',
+                'ood night': 'goodnight'}
 
 name_canonicalizer = Canonicalizer(NAME_PATTERNS)
 map_canonicalizer = Canonicalizer(MAP_PATTERNS)

@@ -20,7 +20,7 @@ TODOS:
 + (done) milestone: no manual interventions on two unseen VODs
 + (done) milestone: no outrageous data errors on two unseen VODs
 + (done) warnings in hh::mm::ss
-+ username features? count #{aeiou}/total?
++ (done) username features? count #{aeiou}/total?
 + (done) progressbar
 + (done) add holiday edition queue reference image
 + (done) add random reference
@@ -29,6 +29,6 @@ TODOS:
 + (done) implement baseline statistics (based on winrates)
 + (done) implement feature encoding incl. categorical to one-hot
 + (done) implement cross-validation
-+ model parameter tuning if cross-validation looks good
-+ feature ablation study if model parameter tuning looks good
-+ history study if feature ablation study looks good
++ (done) model parameter tuning if cross-validation looks good
++ (done) feature ablation study if model parameter tuning looks good
++ (done) history study if feature ablation study looks good
