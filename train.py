@@ -70,7 +70,7 @@ def train_final(params):
 
 def inference_final(inp, history, modelandparams):
     inf_dataframe = data.inference_dataframe(inp, history, dataset.dataframe)
-    inf_inp = inf_dataframe.iloc[-1:]
+    inf_inp = inf_dataframe.iloc[-1:].drop('outcome_victory', axis=1)
     print(inf_inp.T)
     for basename, model, params in modelandparams:
         dTest = xgb.DMatrix(select_features(inf_inp, params), label=None)
