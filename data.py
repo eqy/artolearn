@@ -10,6 +10,9 @@ import constants
 def sub(l1, l2):
     return [first - second for first, second in zip(l1, l2)]
 
+def div(l1, l2):
+    return [first / (second + 1e-6) for first, second in zip(l1, l2)]
+
 class ResultFeatureTracker(object):
     def __init__(self, pendingasvictory=True):
         self.wins = [0, 0, 0, 0, 0]
@@ -19,7 +22,7 @@ class ResultFeatureTracker(object):
         self.pendingasvictory = pendingasvictory
 
     def current_features(self):
-        return self.wins + self.losses + self.winstreaks + self.lossstreaks + sub(self.wins, self.losses)
+        return self.winstreaks + self.lossstreaks + div(self.wins, self.losses)
 
     def update(self, result, race):
         race_to_idx = {'p': 1, 't': 2, 'z': 3, 'r': 4}
@@ -100,11 +103,12 @@ class StreamSessionData(object):
             rawdata = list(rawdata)
             oppo_name = rawdata[constants.OPPONENT_NAME_IDX]
             name_features = compute_name_features(oppo_name)
-            self.data.append(rawdata + self.result_feature_tracker.current_features() + name_features)
+            current_features = self.result_feature_tracker.current_features().copy()
             oppo_race = rawdata[constants.OPPONENT_RACE_IDX]
             result = rawdata[constants.RESULT_IDX]
             result = self.result_feature_tracker.update(result, oppo_race)
             rawdata[constants.RESULT_IDX] = result
+            self.data.append(rawdata + current_features + name_features)
             
 
 class Dataset(object):

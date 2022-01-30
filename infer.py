@@ -5,6 +5,7 @@ import time
 
 import xgboost as xgb
 
+import constants
 import train
 
 def main():
@@ -20,22 +21,30 @@ def main():
     parser.add_argument('--map', type=str, required=True)
     parser.add_argument('--turnrate', type=float, default=0)
     parser.add_argument('--latency', type=str, default='')
-    parser.add_argument('--streamtime', type=float, required=True)
+    parser.add_argument('--uptime', type=float, required=True)
     
     args = parser.parse_args()
     if args.artommr > 1800:
         assert len(args.artorank)
     if args.oppommr > 1800:
         assert len(args.opporank)
-    assert args.artorace in 'ptzr'
-    assert args.opporace in 'ptzr'
+    assert args.artorace in 'ptzr', "unknown artosis race"
+    assert args.opporace in 'ptzr', "unknown opponent race"
+    if args.artorace != 't':
+        print("WARNING: artosis race not terran, are you sure?")
     assert args.artommr < 3000
     assert args.oppommr < 3000
+   
+    map_values = set()
+    for _, value in constants.MAP_PATTERNS.items():
+        map_values.add(value)
+ 
+    assert args.map in map_values, "unknown map"
 
     inp = [time.time(),
             'artosis'   , args.artorank, args.artommr, args.artorace,
             args.opponame, args.opporank, args.oppommr, args.opporace,
-            args.map, args.turnrate, args.latency, args.streamtime, 'defeat']
+            args.map, args.turnrate, args.latency, args.uptime, 'defeat']
     assert len(args.history) % 2 == 0
     modelandparams = list()
     for dirpath, _, filenames in os.walk('.'):

@@ -6,11 +6,20 @@ import data
 
 dataset = data.load_dir('data')
 
-def get_columns(dataset):
-    return [column for column in dataset.one_hot.columns if 'outcome' not in column]
+def get_columns(dataset, additional_drop=None):
+    always_dropped = ['outcome_victory', 'epochseconds', 'uptime']
+    if additional_drop is not None:
+        always_dropped += additional_drop 
+    def incolumn(column):
+        for drop in always_dropped:
+            if drop in column:
+                return True
+        return False
+    return [column for column in dataset.one_hot.columns if not incolumn(column)]
 
 def select_features(df, features):
     dropped_features = [column for column in df.columns if (column not in features) or features[column] == 0]
+    assert 'epochseconds' in dropped_features and 'outcome_victory' not in df.columns
     pruned = df.drop(dropped_features, axis='columns')
     return pruned
 
@@ -19,6 +28,7 @@ def testcv(params):
     dfX = select_features(dataset.one_hot.drop('outcome_victory', axis=1), params)
     dfY = dataset.one_hot['outcome_victory']
     d = xgb.DMatrix(dfX, label=dfY)
+    print(dfX.columns)
     result = xgb.cv(params, d, num_boost_round=params['num_boost_round'], nfold=20, shuffle=True)
     error = result['test-error-mean'][params['num_boost_round']-1]
     print(error)
@@ -27,10 +37,10 @@ def testcv(params):
 def testtv(params):
     days = 2
     print(f"loaded {len(dataset.dataframe)}")
-    maxtime = max(dataset.one_hot['time'])
-    dfWindow = dataset.one_hot[dataset.one_hot['time'] > maxtime - (params['limit_days']*86400)]
-    dfTrain = dfWindow[dfWindow['time'] < maxtime - (days*86400)]
-    dfTest = dfWindow[dfWindow['time'] >= maxtime - (days*86400)]
+    maxtime = max(dataset.one_hot['epochseconds'])
+    dfWindow = dataset.one_hot[dataset.one_hot['epochseconds'] > maxtime - (params['limit_days']*86400)]
+    dfTrain = dfWindow[dfWindow['epochseconds'] < maxtime - (days*86400)]
+    dfTest = dfWindow[dfWindow['epochseconds'] >= maxtime - (days*86400)]
 
     assert len(dfTrain) + len(dfTest) == len(dfWindow)
     dfXTrain = select_features(dfTrain.drop('outcome_victory', axis=1), params)
@@ -40,6 +50,7 @@ def testtv(params):
     dTrain = xgb.DMatrix(dfXTrain, label=dfYTrain)
     dTest = xgb.DMatrix(dfXTest, label=dfYTest)
     evals_result = dict()
+    print(dfXTrain.columns)
     result = xgb.train(params, dTrain, num_boost_round=params['num_boost_round'], evals=[(dTest, 'test')], evals_result=evals_result, verbose_eval=False)
     error = evals_result['test']['error'][-1]
     print(error)
@@ -48,8 +59,8 @@ def testtv(params):
 def train_final(params):
     dfTrain = dataset.one_hot
     if 'limit_days' in params.keys() and params['limit_days'] is not None:
-        maxtime = max(dfTrain['time'])
-        dfTrain = dfTrain[dfTrain['time'] > maxtime - (params['limit_days']*86400)]
+        maxtime = max(dfTrain['epochseconds'])
+        dfTrain = dfTrain[dfTrain['epochseconds'] > maxtime - (params['limit_days']*86400)]
     dfXTrain = select_features(dfTrain.drop('outcome_victory', axis=1), params)
     dfYTrain = dfTrain['outcome_victory']
     print(f"final train with {len(dfTrain)}")
@@ -60,7 +71,7 @@ def train_final(params):
 def inference_final(inp, history, modelandparams):
     inf_dataframe = data.inference_dataframe(inp, history, dataset.dataframe)
     inf_inp = inf_dataframe.iloc[-1:]
-    print(inf_inp)
+    print(inf_inp.T)
     for basename, model, params in modelandparams:
         dTest = xgb.DMatrix(select_features(inf_inp, params), label=None)
         res = model.predict(dTest)[0]
@@ -68,12 +79,11 @@ def inference_final(inp, history, modelandparams):
             outcome = 'victory'
         else:
             outcome = 'defeat'
-            res = 1 - res
-        print(f"{basename}: {outcome} ({res:.3f})")
+        print(f"{basename}: {outcome} ({res:.3f},{1-res:.3f})")
 
-def getobjective(cv=True):
+def getobjective(cv=True, additional_drop=None):
     def objective(trial):
-        columns = get_columns(dataset)
+        columns = get_columns(dataset, additional_drop)
         params = {'eta': trial.suggest_float('eta', 0.01, 100, log=True),
                   'max_depth': trial.suggest_int('max_depth', 1, 20),
                   'alpha': trial.suggest_float('alpha', 0.001, 100, log=True),

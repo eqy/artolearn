@@ -15,6 +15,8 @@ from skimage.metrics import peak_signal_noise_ratio as psnr
 
 from progress.bar import Bar
 
+import constants
+
 DEBUG_ITER = 0
 
 # cv.setNumThreads(4)
@@ -102,29 +104,8 @@ class Canonicalizer(object):
     def matched(self, string):
         return string in self.values
         
-
-NAME_PATTERNS = {'artosis': 'artosis',
-                 'arto': 'artosis',
-                 'valks': 'artosis',
-                 'canadadry': 'artosis',
-                 'artasis': 'artosis',
-                 'newgear': 'artosis',
-                 'didntmake': 'artosis'}
-
-MAP_PATTERNS = {'polypoid': 'polypoid',
-                'potypoid': 'polypoid',
-                'poly': 'polypoid',
-
-                'eclipse': 'eclipse',
-                'clipse': 'eclipse',
-                'good night': 'goodnight',
-                'good': 'goodnight',
-                'largo': 'largo',
-                'larg': 'largo',
-                'ood night': 'goodnight'}
-
-name_canonicalizer = Canonicalizer(NAME_PATTERNS)
-map_canonicalizer = Canonicalizer(MAP_PATTERNS)
+name_canonicalizer = Canonicalizer(constants.NAME_PATTERNS)
+map_canonicalizer = Canonicalizer(constants.MAP_PATTERNS)
 
 def grab_matchdata2(frame, player_a_race, player_b_race, debug=False, online_debug=True):
     global DEBUG_ITER
