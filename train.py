@@ -81,7 +81,7 @@ def inference_final(inp, history, modelandparams):
             outcome = 'defeat'
         print(f"{basename}: {outcome} ({res:.3f},{1-res:.3f})")
 
-def getobjective(cv=True, additional_drop=None):
+def getobjective(cv=True, additional_drop=None, select_features=False):
     def objective(trial):
         columns = get_columns(dataset, additional_drop)
         params = {'eta': trial.suggest_float('eta', 0.01, 100, log=True),
@@ -98,7 +98,10 @@ def getobjective(cv=True, additional_drop=None):
                   'limit_days': trial.suggest_int('limit_days', 5, 50) if not cv else None,
                  }
         for column in columns:
-            params[column] = trial.suggest_int(column, 0, 1) 
+            if select_features:
+                params[column] = trial.suggest_int(column, 0, 1)
+            else:
+                params[column] = trial.suggest_int(column, 1, 1)
         if cv:
             return testcv(params)
         return testtv(params)

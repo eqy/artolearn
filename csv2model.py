@@ -13,6 +13,7 @@ def main():
     parser.add_argument('--cross-validation', help='cross-validation mode', action='store_true')
     parser.add_argument('--time-validation', help='time-validation mode', action='store_true')
     parser.add_argument('--additional-drop', help='comma-separated list of additional features to drop', type=str, default='')
+    parser.add_argument('--select-features', help='whether to select features', action='store_true')
     args = parser.parse_args()
     assert args.cross_validation ^ args.time_validation, "cross-validation or time-validation must be picked"
     validation_type = 'cross_validation' if args.cross_validation else 'time_validation'
@@ -23,7 +24,7 @@ def main():
     columns = train.get_columns(train.dataset)
     for drop in additional_drop:
         assert drop in columns
-    study.optimize(train.getobjective(args.cross_validation, additional_drop), n_trials=args.trials)
+    study.optimize(train.getobjective(args.cross_validation, additional_drop, args.select_features), n_trials=args.trials)
     params = study.best_trial.params
     print(params)
     params['eval_metric'] = 'error'
