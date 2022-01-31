@@ -14,11 +14,12 @@ def main():
     parser.add_argument('--time-validation', help='time-validation mode', action='store_true')
     parser.add_argument('--additional-drop', help='comma-separated list of additional features to drop', type=str, default='')
     parser.add_argument('--select-features', help='whether to select features', action='store_true')
-    parser.add_argument('--no-session-features', help='leave out session feautres', action='store_true')
+    parser.add_argument('--no-session-features', help='leave out session features', action='store_true')
     args = parser.parse_args()
     assert args.cross_validation ^ args.time_validation, "cross-validation or time-validation must be picked"
     validation_type = 'cross_validation' if args.cross_validation else 'time_validation'
-    name_prefix = f"{args.output}_{validation_type}_{args.trials}_{args.additional_drop}_{datetime.date.today()}"
+    ses = 'no_session_' if args.no_session_features else ''
+    name_prefix = f"{args.output}_{validation_type}_{args.trials}_{args.additional_drop}_{ses}{datetime.date.today()}"
 
     study = optuna.create_study(direction='minimize')
     additional_drop = args.additional_drop.split(',') if args.additional_drop != '' else None

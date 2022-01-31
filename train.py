@@ -92,6 +92,7 @@ def getobjective(cv=True, additional_drop=None, select_features=False, no_sessio
                   'min_child_weight': trial.suggest_float('min_child_weight', 0.001, 100, log=True),
                   'max_delta_step': trial.suggest_float('max_delta_step', 0, 10, step=0.25),
                   'subsample': trial.suggest_float('subsample', 0, 1, step=0.05),
+                  'objective': 'binary:logistic',
                   'eval_metric': 'error',
                   'verbosity': 0,
                   'num_boost_round': trial.suggest_int('num_boost_round', 10, 1000),
