@@ -161,32 +161,38 @@ def test():
      "-----------------\n")
     total_count = 0
     total = 0
+    text += ("Rank | Winrate\n"
+             "---- | -------\n")
     for rank in opponent_ranks:
         rank_dataframe = dataset.dataframe[dataset.dataframe['player_b_rank'] == rank]
         victory_dataframe = rank_dataframe[rank_dataframe['outcome'] == 'victory']
         if rank == '':
             rank = 'unranked'
         winrate = len(victory_dataframe)/len(rank_dataframe)
-        text += f"+ {rank}: `{winrate*100:.1f}%`\n"
+        text += f"{rank} | {winrate*100:.1f}%\n"
         total_count += len(rank_dataframe)
         total += len(rank_dataframe) * max(winrate, 1-winrate)
-    text += f"+ baseline accuracy from rank only: `{(total/total_count)*100:.1f}%`\n"
+    text += f"\n baseline accuracy from rank only: `{(total/total_count)*100:.1f}%`\n"
     total_count = 0
     total = 0
     text += ("per-race winrates\n"
-             "-----------------\n")
+             "-----------------\n"
+             "Rank | Winrate\n"
+             "---- | -------\n")
     for race in opponent_races:
         race_dataframe = dataset.dataframe[dataset.dataframe['player_b_race'] == race]
         victory_dataframe = race_dataframe[race_dataframe['outcome'] == 'victory']
         winrate = len(victory_dataframe)/len(race_dataframe)
-        text += f"+ {race}: `{winrate*100:.1f}%`\n"
+        text += f"{race} | {winrate*100:.1f}%\n"
         total_count += len(race_dataframe)
         total += len(race_dataframe) * max(winrate, 1-winrate)
-    text += f"+ baseline accuracy from race alone: `{(total/total_count)*100:.1f}%`\n"
+    text += f"\n baseline accuracy from race alone: `{(total/total_count)*100:.1f}%`\n"
     total_count = 0
     total = 0
     text += ("per-race+rank winrates\n"
-             "----------------------\n")
+             "----------------------\n"
+             "Race | Rank | Winrate \n"
+             "---- | ---- | ------- \n")
     for rank in opponent_ranks:
         for race in opponent_races:
             rank_dataframe = dataset.dataframe[dataset.dataframe['player_b_rank'] == rank]
@@ -200,8 +206,8 @@ def test():
             winrate = len(victory_dataframe)/len(race_dataframe)
             total_count += len(race_dataframe)
             total += len(race_dataframe) * max(winrate, 1-winrate) 
-            text += f"+ {printrank} {race}: `{winrate*100:.1f}%`\n"
-    text += f"+ race+rank baseline accuracy: `{(total/total_count)*100:.1f}%`\n"
+            text += f"{printrank} | {race} | {winrate*100:.1f}%\n"
+    text += f"\n race+rank baseline accuracy: `{(total/total_count)*100:.1f}%`\n"
     pd.set_option("display.max_rows", 300, "display.max_columns", 4)
     print(dataset.dataframe)
     placeholder = [1600000.0,
