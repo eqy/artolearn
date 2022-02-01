@@ -22,14 +22,20 @@ def main():
     name_prefix = f"{args.output}_{validation_type}_{args.trials}_{args.additional_drop}_{ses}{datetime.date.today()}"
 
     study = optuna.create_study(direction='minimize')
-    additional_drop = args.additional_drop.split(',') if args.additional_drop != '' else None
+    additional_drop = args.additional_drop.split(',') if args.additional_drop != '' else []
     columns = train.get_columns(train.dataset)
     for drop in additional_drop:
-        assert drop in columns
+        found = False
+        for column in columns:
+            if drop in column:
+                found = True
+                break
+        assert found
     study.optimize(train.getobjective(args.cross_validation, additional_drop, args.select_features, args.no_session_features), n_trials=args.trials)
     params = study.best_trial.params
     print(params)
     params['eval_metric'] = 'error'
+    params['objective'] = 'binary:logistic'
     joblib.dump(study, f"{name_prefix}.pkl")
     model = train.train_final(params)
     model.save_model(f"{name_prefix}.model") 

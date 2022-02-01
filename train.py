@@ -35,13 +35,12 @@ def testcv(params):
     return error
 
 def testtv(params):
-    days = 2
+    days = 5
     print(f"loaded {len(dataset.dataframe)}")
     maxtime = max(dataset.one_hot['epochseconds'])
     dfWindow = dataset.one_hot[dataset.one_hot['epochseconds'] > maxtime - (params['limit_days']*86400)]
     dfTrain = dfWindow[dfWindow['epochseconds'] < maxtime - (days*86400)]
     dfTest = dfWindow[dfWindow['epochseconds'] >= maxtime - (days*86400)]
-
     assert len(dfTrain) + len(dfTest) == len(dfWindow)
     dfXTrain = select_features(dfTrain.drop('outcome_victory', axis=1), params)
     dfYTrain = dfTrain['outcome_victory']
@@ -64,6 +63,7 @@ def train_final(params):
     dfXTrain = select_features(dfTrain.drop('outcome_victory', axis=1), params)
     dfYTrain = dfTrain['outcome_victory']
     print(f"final train with {len(dfTrain)}")
+    print("final params", params)
     dTrain = xgb.DMatrix(dfXTrain, label=dfYTrain)
     model = xgb.train(params, dTrain, num_boost_round=params['num_boost_round'])
     return model
@@ -96,7 +96,7 @@ def getobjective(cv=True, additional_drop=None, select_features=False, no_sessio
                   'eval_metric': 'error',
                   'verbosity': 0,
                   'num_boost_round': trial.suggest_int('num_boost_round', 10, 1000),
-                  'limit_days': trial.suggest_int('limit_days', 5, 50) if not cv else None,
+                  'limit_days': trial.suggest_int('limit_days', 5, 60) if not cv else trial.suggest_int('limit_days', 7, 60),
                  }
         for column in columns:
             if select_features:

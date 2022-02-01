@@ -18,7 +18,9 @@ NAME_PATTERNS = {'artosis': 'artosis',
                  'canadadry': 'artosis',
                  'artasis': 'artosis',
                  'newgear': 'artosis',
-                 'didntmake': 'artosis'}
+                 'didntmake': 'artosis',
+                 'screamingbird': 'artosis',
+                 'monkat': 'artosis'}
 
 MAP_PATTERNS = {'polypoid': 'polypoid',
                 'potypoid': 'polypoid',
