@@ -31,35 +31,35 @@ Additional Fun Summary Statistics From Collected Data
 Auto-updated 2022-01-31 21:30:30 (328 games)
 per-rank winrates
 -----------------
-a: `50.9%`
-b: `81.4%`
-unranked: `58.7%`
-s: `19.4%`
-d: `100.0%`
-baseline accuracy from rank only: `61.9%`
++ a: `50.9%`
++ b: `81.4%`
++ unranked: `58.7%`
++ s: `19.4%`
++ d: `100.0%`
++ baseline accuracy from rank only: `61.9%`
 per-race winrates
 -----------------
-p: `54.9%`
-z: `52.2%`
-t: `53.2%`
-r: `92.3%`
-baseline accuracy from race alone: `55.2%`
++ p: `54.9%`
++ z: `52.2%`
++ t: `53.2%`
++ r: `92.3%`
++ baseline accuracy from race alone: `55.2%`
 per-race+rank winrates
 ----------------------
-a p: `49.3%`
-a z: `50.9%`
-a t: `50.0%`
-a r: `80.0%`
-b p: `85.7%`
-b z: `86.7%`
-b t: `65.0%`
-b r: `100.0%`
-unranked p: `63.2%`
-unranked z: `46.7%`
-unranked t: `63.6%`
-unranked r: `100.0%`
-s p: `23.8%`
-s z: `11.1%`
-s t: `16.7%`
-d p: `100.0%`
-race+rank baseline accuracy: `62.5%`
++ a p: `49.3%`
++ a z: `50.9%`
++ a t: `50.0%`
++ a r: `80.0%`
++ b p: `85.7%`
++ b z: `86.7%`
++ b t: `65.0%`
++ b r: `100.0%`
++ unranked p: `63.2%`
++ unranked z: `46.7%`
++ unranked t: `63.6%`
++ unranked r: `100.0%`
++ s p: `23.8%`
++ s z: `11.1%`
++ s t: `16.7%`
++ d p: `100.0%`
++ race+rank baseline accuracy: `62.5%`
