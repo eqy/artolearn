@@ -29,6 +29,7 @@ The live inference CLI is provided by `infer.py`.
 Additional Fun Summary Statistics From Collected Data
 -----------------------------------------------------
 Auto-updated 2022-01-31 21:30:30 (328 games)
+
 per-rank winrates
 -----------------
 Rank | Winrate
@@ -40,6 +41,7 @@ s | 19.4%
 d | 100.0%
 
  baseline accuracy from rank only: `61.9%`
+
 per-race winrates
 -----------------
 Rank | Winrate
@@ -50,6 +52,7 @@ t | 53.2%
 r | 92.3%
 
  baseline accuracy from race alone: `55.2%`
+
 per-race+rank winrates
 ----------------------
 Race | Rank | Winrate 

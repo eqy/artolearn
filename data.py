@@ -157,7 +157,7 @@ def test():
     text = ("\nAdditional Fun Summary Statistics From Collected Data\n"
      "-----------------------------------------------------\n"
     f"Auto-updated {datetime.datetime.fromtimestamp(lastepochtime)} ({len(dataset.dataframe)} games)\n"
-     "per-rank winrates\n"
+     "\nper-rank winrates\n"
      "-----------------\n")
     total_count = 0
     total = 0
@@ -175,7 +175,7 @@ def test():
     text += f"\n baseline accuracy from rank only: `{(total/total_count)*100:.1f}%`\n"
     total_count = 0
     total = 0
-    text += ("per-race winrates\n"
+    text += ("\nper-race winrates\n"
              "-----------------\n"
              "Rank | Winrate\n"
              "---- | -------\n")
@@ -189,7 +189,7 @@ def test():
     text += f"\n baseline accuracy from race alone: `{(total/total_count)*100:.1f}%`\n"
     total_count = 0
     total = 0
-    text += ("per-race+rank winrates\n"
+    text += ("\nper-race+rank winrates\n"
              "----------------------\n"
              "Race | Rank | Winrate \n"
              "---- | ---- | ------- \n")
