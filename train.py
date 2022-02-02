@@ -25,8 +25,12 @@ def select_features(df, features):
 
 def testcv(params):
     print(f"loaded {len(dataset.dataframe)}")
-    dfX = select_features(dataset.one_hot.drop('outcome_victory', axis=1), params)
-    dfY = dataset.one_hot['outcome_victory']
+    maxtime = max(dataset.one_hot['epochseconds'])
+    dfWindow = dataset.one_hot[dataset.one_hot['epochseconds'] > maxtime - (params['limit_days']*86400)]
+    print(f"window {len(dfWindow)}")
+    dfX = select_features(dfWindow.drop('outcome_victory', axis=1), params)
+    dfY = dfWindow['outcome_victory']
+    assert len(dfX) == len(dfY)
     d = xgb.DMatrix(dfX, label=dfY)
     print(dfX.columns)
     result = xgb.cv(params, d, num_boost_round=params['num_boost_round'], nfold=20, shuffle=True)
@@ -35,17 +39,20 @@ def testcv(params):
     return error
 
 def testtv(params):
-    days = 5
+    days = 7
     print(f"loaded {len(dataset.dataframe)}")
     maxtime = max(dataset.one_hot['epochseconds'])
     dfWindow = dataset.one_hot[dataset.one_hot['epochseconds'] > maxtime - (params['limit_days']*86400)]
+    print(f"window {len(dfWindow)}")
     dfTrain = dfWindow[dfWindow['epochseconds'] < maxtime - (days*86400)]
     dfTest = dfWindow[dfWindow['epochseconds'] >= maxtime - (days*86400)]
     assert len(dfTrain) + len(dfTest) == len(dfWindow)
     dfXTrain = select_features(dfTrain.drop('outcome_victory', axis=1), params)
     dfYTrain = dfTrain['outcome_victory']
+    assert len(dfXTrain) == len(dfYTrain)
     dfXTest = select_features(dfTest.drop('outcome_victory', axis=1), params)
     dfYTest = dfTest['outcome_victory']
+    assert len(dfXTest) == len(dfYTest)
     dTrain = xgb.DMatrix(dfXTrain, label=dfYTrain)
     dTest = xgb.DMatrix(dfXTest, label=dfYTest)
     evals_result = dict()
@@ -62,6 +69,7 @@ def train_final(params):
         dfTrain = dfTrain[dfTrain['epochseconds'] > maxtime - (params['limit_days']*86400)]
     dfXTrain = select_features(dfTrain.drop('outcome_victory', axis=1), params)
     dfYTrain = dfTrain['outcome_victory']
+    assert len(dfXTrain) == len(dfYTrain)
     print(f"final train with {len(dfTrain)}")
     print("final params", params)
     dTrain = xgb.DMatrix(dfXTrain, label=dfYTrain)
@@ -96,7 +104,7 @@ def getobjective(cv=True, additional_drop=None, select_features=False, no_sessio
                   'eval_metric': 'error',
                   'verbosity': 0,
                   'num_boost_round': trial.suggest_int('num_boost_round', 10, 1000),
-                  'limit_days': trial.suggest_int('limit_days', 5, 60) if not cv else trial.suggest_int('limit_days', 7, 60),
+                  'limit_days': trial.suggest_int('limit_days', 10, 60) if not cv else trial.suggest_int('limit_days', 10, 60),
                  }
         for column in columns:
             if select_features:
