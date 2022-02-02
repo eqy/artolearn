@@ -1,3 +1,5 @@
+import math
+
 from sklearn.model_selection import train_test_split
 import xgboost as xgb
 import optuna
@@ -5,6 +7,9 @@ import optuna
 import data
 
 dataset = data.load_dir('data')
+maxtime = max(dataset.one_hot['epochseconds'])
+mintime = min(dataset.one_hot['epochseconds'])
+maxdays = math.ceil((maxtime - mintime)/86400)
 
 def get_columns(dataset, additional_drop=None):
     always_dropped = ['outcome_victory', 'epochseconds', 'uptime']
@@ -25,7 +30,6 @@ def select_features(df, features):
 
 def testcv(params):
     print(f"loaded {len(dataset.dataframe)}")
-    maxtime = max(dataset.one_hot['epochseconds'])
     dfWindow = dataset.one_hot[dataset.one_hot['epochseconds'] > maxtime - (params['limit_days']*86400)]
     print(f"window {len(dfWindow)}")
     dfX = select_features(dfWindow.drop('outcome_victory', axis=1), params)
@@ -41,7 +45,6 @@ def testcv(params):
 def testtv(params):
     days = 7
     print(f"loaded {len(dataset.dataframe)}")
-    maxtime = max(dataset.one_hot['epochseconds'])
     dfWindow = dataset.one_hot[dataset.one_hot['epochseconds'] > maxtime - (params['limit_days']*86400)]
     print(f"window {len(dfWindow)}")
     dfTrain = dfWindow[dfWindow['epochseconds'] < maxtime - (days*86400)]
@@ -90,6 +93,7 @@ def inference_final(inp, history, modelandparams):
         print(f"{basename}: {outcome} ({res:.3f},{1-res:.3f})")
 
 def getobjective(cv=True, additional_drop=None, select_features=False, no_session_features=False):
+    print("getting objective with maxdays:", maxdays)
     def objective(trial):
         columns = get_columns(dataset, additional_drop)
         params = {'eta': trial.suggest_float('eta', 0.01, 100, log=True),
@@ -104,7 +108,7 @@ def getobjective(cv=True, additional_drop=None, select_features=False, no_sessio
                   'eval_metric': 'error',
                   'verbosity': 0,
                   'num_boost_round': trial.suggest_int('num_boost_round', 10, 1000),
-                  'limit_days': trial.suggest_int('limit_days', 10, 60) if not cv else trial.suggest_int('limit_days', 10, 60),
+                  'limit_days': trial.suggest_int('limit_days', 10, maxdays) if not cv else trial.suggest_int('limit_days', 10, maxdays),
                  }
         for column in columns:
             if select_features:
