@@ -220,7 +220,12 @@ def test():
     assert len(out_df) == len(dataset.dataframe) + 1
     #print(out_df)
     assert len(dataset.one_hot.columns) == len(out_df.columns)
-    print("OK")
+
+    available_df = dataset.dataframe[(dataset.dataframe['player_a_mmr'] > 0) & (dataset.dataframe['player_b_mmr'] > 0)]
+    total_available = len(available_df)
+    correct_win = available_df[(available_df['player_a_mmr'] > available_df['player_b_mmr']) & ((available_df['outcome'] == 'victory') | (available_df['outcome'] == 'pending'))]
+    correct_lose  = available_df[(available_df['player_a_mmr'] < available_df['player_b_mmr']) & (available_df['outcome'] == 'defeat')]
+    text += f"\nbaseline accuracy from always picking higher mmr player:`{100*(len(correct_win)+len(correct_lose))/total_available:.1f}%`\n"
 
     lines = list()
     with open('README_base.md', 'r') as f:
@@ -229,6 +234,7 @@ def test():
     lines += text
     with open('README.md', 'w') as f:
         f.writelines(lines) 
+    print("OK")
         
             
 if __name__ == '__main__':

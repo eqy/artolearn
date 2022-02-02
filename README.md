@@ -75,3 +75,5 @@ s | t | 16.7%
 d | p | 100.0%
 
  race+rank baseline accuracy: `63.5%`
+
+baseline accuracy from always picking higher mmr player:`65.1%`
