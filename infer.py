@@ -16,7 +16,7 @@ def main():
     parser.add_argument('--opporace', type=str, help='opponent race', required=True)
     parser.add_argument('--artorank', type=str, help='artosis rank', default='')
     parser.add_argument('--opporank', type=str, help='opponent rank', default='')
-    parser.add_argument('--opponame', type=str, help='opponent name', default='')
+    # parser.add_argument('--opponame', type=str, help='opponent name', default='')
     parser.add_argument('--history', type=str, help="match history e.g., zwpltw", default='')
     parser.add_argument('--map', type=str, required=True)
     parser.add_argument('--turnrate', type=float, default=0)
@@ -43,7 +43,7 @@ def main():
 
     inp = [time.time(),
             'artosis'   , args.artorank, args.artommr, args.artorace,
-            args.opponame, args.opporank, args.oppommr, args.opporace,
+            'opponentnameplaceholder', args.opporank, args.oppommr, args.opporace,
             args.map, args.turnrate, args.latency, args.uptime, 'defeat']
     assert len(args.history) % 2 == 0
     modelandparams = list()
