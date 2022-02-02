@@ -103,13 +103,13 @@ class StreamSessionData(object):
         for rawdata in self.rawdata:
             rawdata = list(rawdata)
             oppo_name = rawdata[constants.OPPONENT_NAME_IDX]
-            name_features = compute_name_features(oppo_name)
+            # name_features = compute_name_features(oppo_name)
             current_features = self.result_feature_tracker.current_features().copy()
             oppo_race = rawdata[constants.OPPONENT_RACE_IDX]
             result = rawdata[constants.RESULT_IDX]
             result = self.result_feature_tracker.update(result, oppo_race)
             rawdata[constants.RESULT_IDX] = result
-            self.data.append(rawdata + current_features + name_features)
+            self.data.append(rawdata + current_features)# + name_features)
             
 
 class Dataset(object):
