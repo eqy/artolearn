@@ -30,5 +30,6 @@ TODOS:
 + (done) implement feature encoding incl. categorical to one-hot
 + (done) implement cross-validation
 + (done) model parameter tuning if cross-validation looks good
-+ (done) feature ablation study if model parameter tuning looks good
 + (done) history study if feature ablation study looks good
++ automatically deduce max days interval for study
++ redo? feature ablation study if model parameter tuning looks good
