@@ -45,13 +45,12 @@ def testcv(params):
 
 def testtv(params):
     days = 7
-    params['limit_days'] = days
     print(f"loaded {len(dataset.dataframe)}")
     dfWindow = dataset.one_hot[dataset.one_hot['epochseconds'] > maxtime - (params['limit_days']*86400)]
     print(f"window {len(dfWindow)}")
     dfTrain = dfWindow[dfWindow['epochseconds'] < maxtime - (days*86400)]
     dfTest = dfWindow[dfWindow['epochseconds'] >= maxtime - (days*86400)]
-    assert len(dfTrain) and len(dfTest)
+    assert len(dfTrain) and len(dfTest), f"NO TRAIN OR TEST? limit days: {params['limit_days']}"
     assert len(dfTrain) + len(dfTest) == len(dfWindow)
     dfXTrain = select_features(dfTrain.drop('outcome_victory', axis=1), params)
     dfYTrain = dfTrain['outcome_victory']
@@ -66,7 +65,6 @@ def testtv(params):
     result = xgb.train(params, dTrain, num_boost_round=params['num_boost_round'], evals=[(dTest, 'test')], evals_result=evals_result, verbose_eval=False)
     error = evals_result['test']['error'][-1]
     print(error)
-    raise Exception
     return error
 
 def train_final(params):
