@@ -62,8 +62,8 @@ def inference_dataframe(inp, history, dataframe):
         result = 'victory' if history[idx+1] == 'w' else 'defeat'
         race = history[idx]
         result_feature_tracker.update(result, race)
-    name_features = compute_name_features(inp[constants.OPPONENT_NAME_IDX])
-    curr_row = inp + result_feature_tracker.current_features() + name_features
+    # name_features = compute_name_features(inp[constants.OPPONENT_NAME_IDX])
+    curr_row = inp + result_feature_tracker.current_features() # + name_features
     print(curr_row)
     assert len(curr_row) == len(dataframe.columns), f"mismatched schema {len(curr_row)} {len(dataframe.columns)}"
     # This looks expensive but this is how it's done in the docs yikes
