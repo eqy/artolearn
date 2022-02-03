@@ -50,6 +50,8 @@ def main():
     for dirpath, _, filenames in os.walk('.'):
         for filename in filenames:
             basename, ext = os.path.splitext(filename)
+            if 'old_models' in dirpath:
+                continue
             if ext == '.model':
                 assert os.path.exists(os.path.join(dirpath, basename + '.pkl'))
                 booster = xgb.Booster()
