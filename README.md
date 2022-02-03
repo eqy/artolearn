@@ -48,8 +48,8 @@ per-race winrates
 Rank | Winrate
 ---- | -------
 p | 55.8%
-z | 52.5%
-t | 52.9%
+z | 52.0%
+t | 53.5%
 r | 93.3%
 
  baseline accuracy from race alone: `55.8%`
@@ -73,7 +73,7 @@ unranked | r | 100.0%
 s | p | 23.8%
 s | z | 11.1%
 s | t | 14.3%
-c | t | 0.0%
+c | z | 0.0%
 d | p | 100.0%
 
  race+rank baseline accuracy: `64.2%`
