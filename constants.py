@@ -20,7 +20,11 @@ NAME_PATTERNS = {'artosis': 'artosis',
                  'newgear': 'artosis',
                  'didntmake': 'artosis',
                  'screamingbird': 'artosis',
-                 'monkat': 'artosis'}
+                 'monkat': 'artosis',
+                 's.a.l.t.': 'artosis',
+                 '.alt': 'artosis',
+                 '.a.lt': 'artosis',
+                 '.a.l.t': 'artosis',}
 
 MAP_PATTERNS = {'polypoid': 'polypoid',
                 'potypoid': 'polypoid',
