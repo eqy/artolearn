@@ -28,52 +28,54 @@ The live inference CLI is provided by `infer.py`.
 
 Additional Fun Summary Statistics From Collected Data
 -----------------------------------------------------
-Auto-updated 2022-02-01 21:18:12 (345 games)
+Auto-updated 2022-02-02 21:29:27 (355 games)
 
 per-rank winrates
 -----------------
 Rank | Winrate
 ---- | -------
-a | 49.2%
-b | 82.7%
-unranked | 62.0%
-s | 19.4%
+a | 49.5%
+b | 83.5%
+unranked | 62.3%
+s | 18.9%
+c | 0.0%
 d | 100.0%
 
- baseline accuracy from rank only: `62.6%`
+ baseline accuracy from rank only: `63.1%`
 
 per-race winrates
 -----------------
 Rank | Winrate
 ---- | -------
-p | 54.7%
-z | 53.1%
-t | 53.0%
-r | 92.9%
+p | 55.8%
+z | 52.5%
+t | 52.9%
+r | 93.3%
 
- baseline accuracy from race alone: `55.4%`
+ baseline accuracy from race alone: `55.8%`
 
 per-race+rank winrates
 ----------------------
 Race | Rank | Winrate 
 ---- | ---- | ------- 
-a | p | 47.4%
+a | p | 48.1%
 a | z | 49.1%
 a | t | 48.9%
 a | r | 80.0%
-b | p | 85.7%
+b | p | 86.7%
 b | z | 88.9%
-b | t | 66.7%
+b | t | 68.2%
 b | r | 100.0%
-unranked | p | 68.2%
-unranked | z | 50.0%
-unranked | t | 63.6%
+unranked | p | 69.6%
+unranked | z | 47.1%
+unranked | t | 66.7%
 unranked | r | 100.0%
 s | p | 23.8%
 s | z | 11.1%
-s | t | 16.7%
+s | t | 14.3%
+c | t | 0.0%
 d | p | 100.0%
 
- race+rank baseline accuracy: `63.5%`
+ race+rank baseline accuracy: `64.2%`
 
 baseline accuracy from always picking higher mmr player:`65.1%`
