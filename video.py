@@ -39,9 +39,9 @@ def cropframe(frame, height, width):
     CROP_REL = (1080/1080, 1520/1920) #ry1, rx1
     return crop(frame, 0, 0, CROP_REL[0], CROP_REL[1])
 
-def resized_ssim(img1, img2):
-    img1r = cv.resize(img1, (32, 32))
-    img2r = cv.resize(img2, (32, 32))
+def resized_ssim(img1, img2, size=(32, 32)):
+    img1r = cv.resize(img1, size)
+    img2r = cv.resize(img2, size)
     return ssim(img1r, img2r)
 
 def threshold(img, boundary=56):
@@ -567,7 +567,7 @@ class ReferenceFrames(object):
         for frametype in self.frametypes.keys():
             maxscore = -1
             for reference_frame in self.frametypes[frametype]:
-                score = ssim(small, reference_frame)
+                score = resized_ssim(small, reference_frame, (64, 64))
                 if score > maxscore:
                     maxscore = score
             max_scores.append((frametype, maxscore))
@@ -600,7 +600,7 @@ class ReferenceFrames(object):
         for frametype in self.racetoplayer_b_frames.keys():
             maxscore = -1
             for reference_frame in self.racetoplayer_b_frames[frametype]:
-                score = ssim(player_b_crop, crop(reference_frame, *PLAYER_B_BBOX))
+                score = resized_ssim(player_b_crop, crop(reference_frame, *PLAYER_B_BBOX), (64, 64))
                 if score > maxscore:
                     maxscore = score
             max_scores.append((frametype, maxscore))
