@@ -156,8 +156,8 @@ def test():
     print("baselines...")
     victory_dataframe = dataset.dataframe[dataset.dataframe['outcome'] == 'victory']
     print("global winrate:", len(victory_dataframe)/len(dataset.dataframe))
-    opponent_races = dataset.dataframe['player_b_race'].unique()
-    opponent_ranks = dataset.dataframe['player_b_rank'].unique()
+    opponent_races = sorted(dataset.dataframe['player_b_race'].unique())
+    opponent_ranks = sorted(dataset.dataframe['player_b_rank'].unique())
     lastepochtime = max(dataset.dataframe['epochseconds'])
     text = ("\nAdditional Fun Summary Statistics From Collected Data\n"
      "-----------------------------------------------------\n"
@@ -231,6 +231,24 @@ def test():
     correct_win = available_df[(available_df['player_a_mmr'] > available_df['player_b_mmr']) & ((available_df['outcome'] == 'victory') | (available_df['outcome'] == 'pending'))]
     correct_lose  = available_df[(available_df['player_a_mmr'] < available_df['player_b_mmr']) & (available_df['outcome'] == 'defeat')]
     text += f"\nbaseline accuracy from always picking higher mmr player:`{100*(len(correct_win)+len(correct_lose))/total_available:.1f}%`\n"
+
+    maps = dataset.dataframe.map.unique()
+    text += f"\nmap | vs. {opponent_races[0]} | vs. {opponent_races[1]} | vs. {opponent_races[2]} | vs. {opponent_races[3]}\n"
+    text += f"------|------|------|------|------\n"
+
+    for m in maps:
+        map_df = dataset.dataframe[dataset.dataframe['map'] == m]
+        winrates = list() 
+        for matchup in opponent_races:
+            map_matchup_df = map_df[map_df['player_b_race'] == matchup]
+            win = len(map_matchup_df[(map_matchup_df['outcome'] == 'victory') | (map_matchup_df['outcome'] == 'pending')])
+            lose = len(map_matchup_df[map_matchup_df['outcome'] == 'defeat'])
+            winrate = win/(win + lose) if (win + lose) else np.nan
+            winrates.append(winrate)
+        text += f"{m} | {winrates[0]*100:.1f}% | vs. {winrates[1]*100:.1f}% | vs. {winrates[2]*100:.1f}% | vs. {winrates[3]*100:.1f}%\n"
+
+        
+        
 
     lines = list()
     with open('README_base.md', 'r') as f:

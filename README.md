@@ -34,12 +34,12 @@ per-rank winrates
 -----------------
 Rank | Winrate
 ---- | -------
+unranked | 62.7%
 a | 51.2%
 b | 85.1%
-unranked | 62.7%
-s | 16.7%
 c | 0.0%
 d | 100.0%
+s | 16.7%
 
  baseline accuracy from rank only: `64.1%`
 
@@ -48,9 +48,9 @@ per-race winrates
 Rank | Winrate
 ---- | -------
 p | 56.5%
-z | 53.4%
-t | 54.4%
 r | 85.7%
+t | 54.4%
+z | 53.4%
 
  baseline accuracy from race alone: `56.7%`
 
@@ -58,24 +58,31 @@ per-race+rank winrates
 ----------------------
 Race | Rank | Winrate 
 ---- | ---- | ------- 
-a | p | 50.6%
-a | z | 50.0%
-a | t | 50.0%
-a | r | 83.3%
-b | p | 87.5%
-b | z | 90.0%
-b | t | 70.8%
-b | r | 100.0%
 unranked | p | 70.8%
-unranked | z | 52.6%
-unranked | t | 66.7%
 unranked | r | 50.0%
-s | p | 20.8%
-s | z | 10.0%
-s | t | 12.5%
+unranked | t | 66.7%
+unranked | z | 52.6%
+a | p | 50.6%
+a | r | 83.3%
+a | t | 50.0%
+a | z | 50.0%
+b | p | 87.5%
+b | r | 100.0%
+b | t | 70.8%
+b | z | 90.0%
 c | z | 0.0%
 d | p | 100.0%
+s | p | 20.8%
+s | t | 12.5%
+s | z | 10.0%
 
  race+rank baseline accuracy: `64.1%`
 
 baseline accuracy from always picking higher mmr player:`66.1%`
+
+map | vs. p | vs. r | vs. t | vs. z
+------|------|------|------|------
+eclipse | 43.5% | vs. 80.0% | vs. 60.0% | vs. 60.0%
+largo | 72.7% | vs. 100.0% | vs. 46.2% | vs. 57.6%
+polypoid | 59.6% | vs. 80.0% | vs. 60.6% | vs. 54.1%
+goodnight | 61.9% | vs. 100.0% | vs. 42.1% | vs. 38.1%
