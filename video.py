@@ -242,20 +242,6 @@ def grab_turnrate(frame, debug=False):
         tr = num
     return tr, lat
 
-def frametypetoraces(frametype):
-    if 'tvz' in frametype:
-        return 'T', 'Z'
-    elif 'zvt' in frametype:
-        return 'Z', 'T'
-    elif 'tvp' in frametype:
-        return 'T', 'P'
-    elif 'pvt' in frametype:
-        return 'P', 'T'
-    elif 'tvt' in frametype:
-        return 'T', 'T'
-    else:
-        assert False, f"unsupported frametype ({frametype}) to race"
-
 class VideoParser(object):
     FRAMESKIP = 30 # frameskip for generic parts
     POI_FRAMESKIP = 4 # frameskip for points of interest
