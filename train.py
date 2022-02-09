@@ -44,7 +44,7 @@ def testcv(params):
     return error
 
 def testtv(params):
-    days = 7
+    days = 5
     print(f"loaded {len(dataset.dataframe)}")
     dfWindow = dataset.one_hot[dataset.one_hot['epochseconds'] > maxtime - (params['limit_days']*86400)]
     print(f"window {len(dfWindow)}")
