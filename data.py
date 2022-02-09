@@ -196,22 +196,25 @@ def test():
     total = 0
     text += ("\nper-race+rank winrates\n"
              "----------------------\n"
-             "Race | Rank | Winrate \n"
-             "---- | ---- | ------- \n")
+             f"Rank | vs. {opponent_races[0]} | vs. {opponent_races[1]} | vs. {opponent_races[2]} | vs. {opponent_races[3]}\n"
+             "---- | ---- | ---- | ---- | ---- \n")
     for rank in opponent_ranks:
+        printrank = rank
+        if rank == '':
+            printrank = 'unranked'
+        text += f"{printrank} "
         for race in opponent_races:
             rank_dataframe = dataset.dataframe[dataset.dataframe['player_b_rank'] == rank]
             race_dataframe = rank_dataframe[rank_dataframe['player_b_race'] == race]
             if len(race_dataframe) == 0:
-                continue
-            victory_dataframe = race_dataframe[race_dataframe['outcome'] == 'victory']
-            printrank = rank
-            if rank == '':
-                printrank = 'unranked'
-            winrate = len(victory_dataframe)/len(race_dataframe)
-            total_count += len(race_dataframe)
-            total += len(race_dataframe) * max(winrate, 1-winrate) 
-            text += f"{printrank} | {race} | {winrate*100:.1f}%\n"
+                text += f"| {np.nan}% "
+            else:
+                victory_dataframe = race_dataframe[race_dataframe['outcome'] != 'defeat']
+                winrate = len(victory_dataframe)/len(race_dataframe)
+                total_count += len(race_dataframe)
+                total += len(race_dataframe) * max(winrate, 1-winrate) 
+                text += f"| {winrate*100:.1f}% "
+        text += "\n"
     text += f"\n race+rank baseline accuracy: `{(total/total_count)*100:.1f}%`\n"
     pd.set_option("display.max_rows", 300, "display.max_columns", 4)
     print(dataset.dataframe)

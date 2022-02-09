@@ -56,25 +56,14 @@ z | 53.4%
 
 per-race+rank winrates
 ----------------------
-Race | Rank | Winrate 
----- | ---- | ------- 
-unranked | p | 70.8%
-unranked | r | 50.0%
-unranked | t | 66.7%
-unranked | z | 52.6%
-a | p | 50.6%
-a | r | 83.3%
-a | t | 50.0%
-a | z | 50.0%
-b | p | 87.5%
-b | r | 100.0%
-b | t | 70.8%
-b | z | 90.0%
-c | z | 0.0%
-d | p | 100.0%
-s | p | 20.8%
-s | t | 12.5%
-s | z | 10.0%
+Rank | vs. p | vs. r | vs. t | vs. z
+---- | ---- | ---- | ---- | ---- 
+unranked | 70.8% | 50.0% | 66.7% | 52.6% 
+a | 50.6% | 83.3% | 50.0% | 50.0% 
+b | 87.5% | 100.0% | 70.8% | 90.0% 
+c | nan% | nan% | nan% | 0.0% 
+d | 100.0% | nan% | nan% | nan% 
+s | 20.8% | nan% | 12.5% | 10.0% 
 
  race+rank baseline accuracy: `64.1%`
 
