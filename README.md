@@ -80,6 +80,9 @@ s | z | 10.0%
 
 baseline accuracy from always picking higher mmr player:`66.1%`
 
+map/matchup winrates
+--------------------
+
 map | vs. p | vs. r | vs. t | vs. z
 ------|------|------|------|------
 eclipse | 43.5% | vs. 80.0% | vs. 60.0% | vs. 60.0%

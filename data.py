@@ -233,6 +233,8 @@ def test():
     text += f"\nbaseline accuracy from always picking higher mmr player:`{100*(len(correct_win)+len(correct_lose))/total_available:.1f}%`\n"
 
     maps = dataset.dataframe.map.unique()
+    text += ("\nmap/matchup winrates\n"
+             "--------------------\n")
     text += f"\nmap | vs. {opponent_races[0]} | vs. {opponent_races[1]} | vs. {opponent_races[2]} | vs. {opponent_races[3]}\n"
     text += f"------|------|------|------|------\n"
 
