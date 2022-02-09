@@ -247,7 +247,7 @@ def test():
             lose = len(map_matchup_df[map_matchup_df['outcome'] == 'defeat'])
             winrate = win/(win + lose) if (win + lose) else np.nan
             winrates.append(winrate)
-        text += f"{m} | {winrates[0]*100:.1f}% | vs. {winrates[1]*100:.1f}% | vs. {winrates[2]*100:.1f}% | vs. {winrates[3]*100:.1f}%\n"
+        text += f"{m} | {winrates[0]*100:.1f}% | {winrates[1]*100:.1f}% | {winrates[2]*100:.1f}% | {winrates[3]*100:.1f}%\n"
 
         
         
