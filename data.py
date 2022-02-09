@@ -161,50 +161,38 @@ def test():
     lastepochtime = max(dataset.dataframe['epochseconds'])
     text = ("\nAdditional Fun Summary Statistics From Collected Data\n"
      "-----------------------------------------------------\n"
-    f"Auto-updated {datetime.datetime.fromtimestamp(lastepochtime)} ({len(dataset.dataframe)} games)\n"
-     "\nper-rank winrates\n"
-     "-----------------\n")
+    f"Auto-updated {datetime.datetime.fromtimestamp(lastepochtime)} ({len(dataset.dataframe)} games)\n")
     total_count = 0
     total = 0
-    text += ("Rank | Winrate\n"
-             "---- | -------\n")
     for rank in opponent_ranks:
         rank_dataframe = dataset.dataframe[dataset.dataframe['player_b_rank'] == rank]
-        victory_dataframe = rank_dataframe[rank_dataframe['outcome'] == 'victory']
-        if rank == '':
-            rank = 'unranked'
+        victory_dataframe = rank_dataframe[rank_dataframe['outcome'] != 'defeat']
         winrate = len(victory_dataframe)/len(rank_dataframe)
-        text += f"{rank} | {winrate*100:.1f}%\n"
         total_count += len(rank_dataframe)
         total += len(rank_dataframe) * max(winrate, 1-winrate)
-    text += f"\n baseline accuracy from rank only: `{(total/total_count)*100:.1f}%`\n"
+    rank_acc = total/total_count
     total_count = 0
     total = 0
-    text += ("\nper-race winrates\n"
-             "-----------------\n"
-             "Rank | Winrate\n"
-             "---- | -------\n")
     for race in opponent_races:
         race_dataframe = dataset.dataframe[dataset.dataframe['player_b_race'] == race]
-        victory_dataframe = race_dataframe[race_dataframe['outcome'] == 'victory']
+        victory_dataframe = race_dataframe[race_dataframe['outcome'] != 'defeat']
         winrate = len(victory_dataframe)/len(race_dataframe)
-        text += f"{race} | {winrate*100:.1f}%\n"
         total_count += len(race_dataframe)
         total += len(race_dataframe) * max(winrate, 1-winrate)
-    text += f"\n baseline accuracy from race alone: `{(total/total_count)*100:.1f}%`\n"
+    race_acc = total/total_count
     total_count = 0
     total = 0
     text += ("\nper-race+rank winrates\n"
              "----------------------\n"
-             f"Rank | vs. {opponent_races[0]} | vs. {opponent_races[1]} | vs. {opponent_races[2]} | vs. {opponent_races[3]}\n"
-             "---- | ---- | ---- | ---- | ---- \n")
+             f"rank | vs. {opponent_races[0]} | vs. {opponent_races[1]} | vs. {opponent_races[2]} | vs. {opponent_races[3]} | overall\n"
+             "---- | ---- | ---- | ---- | ---- | ---- \n")
     for rank in opponent_ranks:
         printrank = rank
         if rank == '':
             printrank = 'unranked'
         text += f"{printrank} "
+        rank_dataframe = dataset.dataframe[dataset.dataframe['player_b_rank'] == rank]
         for race in opponent_races:
-            rank_dataframe = dataset.dataframe[dataset.dataframe['player_b_rank'] == rank]
             race_dataframe = rank_dataframe[rank_dataframe['player_b_race'] == race]
             if len(race_dataframe) == 0:
                 text += f"| {np.nan}% "
@@ -214,7 +202,15 @@ def test():
                 total_count += len(race_dataframe)
                 total += len(race_dataframe) * max(winrate, 1-winrate) 
                 text += f"| {winrate*100:.1f}% "
-        text += "\n"
+        winrate = len(rank_dataframe[rank_dataframe['outcome'] != 'defeat'])/len(rank_dataframe)
+        text += f"| {winrate*100:.1f}% \n"
+    text += "overall "
+    for race in opponent_races:
+        race_dataframe = dataset.dataframe[dataset.dataframe['player_b_race'] == race]
+        winrate = len(race_dataframe[race_dataframe['outcome'] != 'defeat'])/len(race_dataframe)
+        text += f"| {winrate*100:.1f}% "
+    text += f"\n\n baseline accuracy from rank alone: `{rank_acc*100:.1f}%`\n"
+    text += f"\n baseline accuracy from race alone: `{race_acc*100:.1f}%`\n"
     text += f"\n race+rank baseline accuracy: `{(total/total_count)*100:.1f}%`\n"
     pd.set_option("display.max_rows", 300, "display.max_columns", 4)
     print(dataset.dataframe)

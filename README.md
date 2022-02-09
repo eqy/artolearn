@@ -30,40 +30,21 @@ Additional Fun Summary Statistics From Collected Data
 -----------------------------------------------------
 Auto-updated 2022-02-08 19:23:18 (404 games)
 
-per-rank winrates
------------------
-Rank | Winrate
----- | -------
-unranked | 62.7%
-a | 49.8%
-b | 84.3%
-c | 0.0%
-d | 100.0%
-s | 16.3%
-
- baseline accuracy from rank only: `63.4%`
-
-per-race winrates
------------------
-Rank | Winrate
----- | -------
-p | 54.9%
-r | 85.7%
-t | 53.8%
-z | 52.9%
-
- baseline accuracy from race alone: `55.7%`
-
 per-race+rank winrates
 ----------------------
-Rank | vs. p | vs. r | vs. t | vs. z
----- | ---- | ---- | ---- | ---- 
-unranked | 70.8% | 50.0% | 66.7% | 52.6% 
-a | 48.9% | 83.3% | 48.9% | 48.5% 
-b | 84.8% | 100.0% | 70.8% | 90.5% 
-c | nan% | nan% | nan% | 0.0% 
-d | 100.0% | nan% | nan% | nan% 
-s | 20.0% | nan% | 12.5% | 10.0% 
+rank | vs. p | vs. r | vs. t | vs. z | overall
+---- | ---- | ---- | ---- | ---- | ---- 
+unranked | 70.8% | 50.0% | 66.7% | 52.6% | 62.7% 
+a | 48.9% | 83.3% | 48.9% | 48.5% | 49.8% 
+b | 84.8% | 100.0% | 70.8% | 90.5% | 84.3% 
+c | nan% | nan% | nan% | 0.0% | 0.0% 
+d | 100.0% | nan% | nan% | nan% | 100.0% 
+s | 20.0% | nan% | 12.5% | 10.0% | 16.3% 
+overall | 54.9% | 85.7% | 53.8% | 52.9% 
+
+ baseline accuracy from rank alone: `63.4%`
+
+ baseline accuracy from race alone: `55.7%`
 
  race+rank baseline accuracy: `64.4%`
 
