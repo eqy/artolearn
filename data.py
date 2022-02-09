@@ -209,7 +209,9 @@ def test():
         race_dataframe = dataset.dataframe[dataset.dataframe['player_b_race'] == race]
         winrate = len(race_dataframe[race_dataframe['outcome'] != 'defeat'])/len(race_dataframe)
         text += f"| {winrate*100:.1f}% "
-    text += f"\n\n baseline accuracy from rank alone: `{rank_acc*100:.1f}%`\n"
+    winrate = len(dataset.dataframe[dataset.dataframe['outcome'] != 'defeat'])/len(dataset.dataframe)
+    text += f"| {winrate*100:.1f}%\n"
+    text += f"\n baseline accuracy from rank alone: `{rank_acc*100:.1f}%`\n"
     text += f"\n baseline accuracy from race alone: `{race_acc*100:.1f}%`\n"
     text += f"\n race+rank baseline accuracy: `{(total/total_count)*100:.1f}%`\n"
     pd.set_option("display.max_rows", 300, "display.max_columns", 4)
