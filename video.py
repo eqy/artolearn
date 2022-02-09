@@ -171,12 +171,6 @@ def grab_matchdata2(frame, player_a_race, player_b_race, debug=False, online_deb
     PLAYER_B_MMR_BBOX = (793/1080, 1298/1920, (793+MMR_BBOX_HEIGHT)/1080, (1298+MMR_BBOX_WIDTH)/1920)
     MAP_BBOX = (214/1080, 729/1920, (214+MAP_BBOX_HEIGHT)/1080, (729+MAP_BBOX_WIDTH)/1920)
 
-    NAMES = ['artosis',
-             'newgear',
-             'valks',
-             'canadadry',
-             'artasis'] # lol, OCR sucks
-
     map_name_crop = crop(frame, *MAP_BBOX)
     map_text = grab_mapdata(map_name_crop)
     player_a_data = grab_playerdata(crop(frame, *PLAYER_A_NAME_BBOX),
@@ -474,52 +468,6 @@ class VideoParser(object):
         self.framecounter += 1
         self.endtimer(frametype)
 
-    #def compute_features(self):
-    #    # compute win-l, per-MU w/l
-    #    wins = 0
-    #    losses = 0
-    #    vp_wins = 0
-    #    vp_losses = 0
-    #    vt_wins = 0
-    #    vt_losses = 0
-    #    vz_wins = 0
-    #    vz_losses = 0
-    #    # currently unused
-    #    vr_wins = 0
-    #    vr_losses = 0
-    #    for idx, game in enumerate(self.games):
-    #        feature_tuple = (wins, losses, wins - losses,
-    #                         vp_wins, vp_losses, vp_wins - vp_losses,
-    #                         vt_wins, vt_losses, vt_wins - vt_losses,
-    #                         vz_wins, vz_losses, vz_wins - vz_losses)
-    #        self.games[idx] = game + feature_tuple
-    #        if game[-1] == 'victory':
-    #            wins += 1
-    #            if game[8] is not None:
-    #                if game[8] == 'P':
-    #                    vp_wins += 1
-    #                elif game[8] == 'T':
-    #                    vt_wins += 1
-    #                elif game[8] == 'Z':
-    #                    vz_wins += 1
-    #                elif game[8] == 'R':
-    #                    vr_wins += 1
-    #                else:
-    #                    assert False, "race unknown"
-    #        elif game[-1] == 'defeat':
-    #            losses += 1 
-    #            if game[8] is not None:
-    #                if game[8] == 'P':
-    #                    vp_losses += 1
-    #                elif game[8] == 'T':
-    #                    vt_losses += 1
-    #                elif game[8] == 'Z':
-    #                    vz_losses += 1
-    #                elif game[8] == 'R':
-    #                    vr_wins += 0
-    #                else:
-    #                    assert False, "race unknown" 
-
     def report(self):
         self.savegame()
         # self.compute_features()
@@ -642,7 +590,7 @@ class Video(object):
 
 def test():
     reference_frames = ReferenceFrames('scene_reference')
-    print(reference_frames.match(cv.imread('2.png')))
+    #print(reference_frames.match(cv.imread('2.png')))
     print("testing grab_matchdata")
     matchdata_frame = cv.imread('scene_reference/match_tvp/1.png')
     player_a_race, player_b_race = reference_frames.matchrace(matchdata_frame)
@@ -692,8 +640,8 @@ def test():
     print(grab_pointsdata(pointsdata_frame))
     pointsdata_frame = cv.imread('scene_reference/points_defeat/1.png')
     print(grab_pointsdata(pointsdata_frame))
-    pointsdata_frame = cv.imread('scene_reference/points_defeat/2.png')
-    print(grab_pointsdata(pointsdata_frame))
+    # pointsdata_frame = cv.imread('scene_reference/points_defeat/2.png')
+    # print(grab_pointsdata(pointsdata_frame))
     pointsdata_frame = cv.imread('scene_reference/points_pending/1.png')
     print(grab_pointsdata(pointsdata_frame))
     print("testing grab_postgamedata")
