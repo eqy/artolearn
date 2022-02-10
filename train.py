@@ -38,7 +38,7 @@ def testcv(params):
     assert len(dfX) == len(dfY)
     d = xgb.DMatrix(dfX, label=dfY)
     print(dfX.columns)
-    result = xgb.cv(params, d, num_boost_round=params['num_boost_round'], nfold=20, shuffle=True)
+    result = xgb.cv(params, d, num_boost_round=params['num_boost_round'], nfold=10, shuffle=True)
     error = result['test-error-mean'][params['num_boost_round']-1]
     print(error)
     return error
