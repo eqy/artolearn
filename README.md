@@ -1,7 +1,7 @@
 artolearn
 ---------
 
-artolean is a collection of scripts for (1) parsing [Artosis](https://twitch.tv/artosis) VODs to extract csvs of game data (e.g., opponent rank, mmr, map, and game outcome), and (2) building and tuning machine learning models for online prediction of game outcomes (gamba gamba MODS OPEN CASINO).
+artolearn is a collection of scripts for (1) parsing [Artosis](https://twitch.tv/artosis) VODs to extract csvs of game data (e.g., opponent rank, mmr, map, and game outcome), and (2) building and tuning machine learning models for online prediction of game outcomes (gamba gamba MODS OPEN CASINO).
 
 Data Extraction
 ---------------
@@ -28,34 +28,34 @@ The live inference CLI is provided by `infer.py`.
 
 Additional Fun Summary Statistics From Collected Data
 -----------------------------------------------------
-Auto-updated 2022-02-08 19:23:18 (404 games)
+Auto-updated 2022-02-09 21:11:45 (420 games)
 
 per-race+rank winrates
 ----------------------
 rank | vs. p | vs. r | vs. t | vs. z | overall
 ---- | ---- | ---- | ---- | ---- | ---- 
-unranked | 70.8% | 50.0% | 66.7% | 52.6% | 62.7% 
-a | 48.9% | 83.3% | 48.9% | 48.5% | 49.8% 
-b | 84.8% | 100.0% | 70.8% | 90.5% | 84.3% 
+unranked | 70.8% | 50.0% | 66.7% | 50.0% | 61.7% 
+a | 48.4% | 83.3% | 47.9% | 51.4% | 50.2% 
+b | 85.7% | 100.0% | 73.1% | 90.5% | 84.9% 
 c | nan% | nan% | nan% | 0.0% | 0.0% 
 d | 100.0% | nan% | nan% | nan% | 100.0% 
-s | 20.0% | nan% | 12.5% | 10.0% | 16.3% 
-overall | 54.9% | 85.7% | 53.8% | 52.9% | 55.7%
+s | 20.0% | nan% | 22.2% | 10.0% | 18.2% 
+overall | 55.1% | 85.7% | 54.7% | 54.0% | 56.2%
 
- baseline accuracy from rank alone: `63.4%`
+ baseline accuracy from rank alone: `63.1%`
 
- baseline accuracy from race alone: `55.7%`
+ baseline accuracy from race alone: `56.2%`
 
- race+rank baseline accuracy: `64.4%`
+ race+rank baseline accuracy: `64.3%`
 
-baseline accuracy from always picking higher mmr player:`66.1%`
+baseline accuracy from always picking higher mmr player:`66.2%`
 
 map/matchup winrates
 --------------------
 
 map | vs. p | vs. r | vs. t | vs. z
 ------|------|------|------|------
-eclipse | 41.5% | 80.0% | 60.0% | 60.0%
-largo | 70.6% | 100.0% | 42.9% | 57.6%
-polypoid | 59.6% | 80.0% | 60.6% | 55.3%
-goodnight | 59.1% | 100.0% | 42.1% | 34.8%
+eclipse | 42.4% | 80.0% | 61.5% | 59.3%
+largo | 69.4% | 100.0% | 42.9% | 58.8%
+polypoid | 59.3% | 80.0% | 61.1% | 58.5%
+goodnight | 59.1% | 100.0% | 42.1% | 33.3%
