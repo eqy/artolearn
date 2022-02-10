@@ -83,12 +83,10 @@ class StreamSessionData(object):
 
     def load(self):
         self.rawdata = list()
-        skipped = 0
         with open(self.filepath, 'r') as f:
             csvreader = csv.reader(f)
             for row in csvreader:
                 if row[0][0] == '#':
-                    skipped += 1
                     continue
                 curr_rawdata = row[:constants.SCHEMA_LEN]
                 curr_rawdata = [item.lower() if isinstance(item, str) else item for item in curr_rawdata]
@@ -99,7 +97,6 @@ class StreamSessionData(object):
                 if curr_rawdata[constants.TURNRATE_IDX] == '':
                     curr_rawdata[constants.TURNRATE_IDX] = '0'
                 self.rawdata.append(curr_rawdata)
-            print(f"skipped: {skipped}")
 
     def compute_features(self):
         assert self.rawdata is not None
