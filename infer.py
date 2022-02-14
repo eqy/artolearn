@@ -59,6 +59,7 @@ def main():
                 params = joblib.load(os.path.join(dirpath, basename + '.pkl')).best_trial.params
                 print("loaded: ", filename)
                 modelandparams.append((basename, booster, params))
+        break
     print(inp)
     outcome = train.inference_final(inp, args.history, modelandparams)
 
