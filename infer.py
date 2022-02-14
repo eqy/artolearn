@@ -32,7 +32,7 @@ def main():
     assert args.opporace in 'ptzr', "unknown opponent race"
     #if args.artorace != 't':
     #    print("WARNING: artosis race not terran, are you sure?")
-    assert args.artommr < 3000
+    #assert args.artommr < 3000
     assert args.oppommr < 3000
    
     map_values = set()
