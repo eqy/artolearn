@@ -28,34 +28,34 @@ The live inference CLI is provided by `infer.py`.
 
 Additional Fun Summary Statistics From Collected Data
 -----------------------------------------------------
-Auto-updated 2022-02-09 21:11:45 (420 games)
+Auto-updated 2022-02-13 19:53:24 (430 games)
 
 per-race+rank winrates
 ----------------------
 rank | vs. p | vs. r | vs. t | vs. z | overall
 ---- | ---- | ---- | ---- | ---- | ---- 
-unranked | 70.8% | 50.0% | 66.7% | 50.0% | 61.7% 
-a | 48.4% | 83.3% | 47.9% | 51.4% | 50.2% 
-b | 85.7% | 100.0% | 73.1% | 90.5% | 84.9% 
-c | nan% | nan% | nan% | 0.0% | 0.0% 
+unranked | 60.0% | 0.0% | 66.7% | 37.5% | 52.0% 
+a | 48.9% | 71.4% | 48.0% | 50.0% | 49.8% 
+b | 86.1% | 100.0% | 73.1% | 90.9% | 85.3% 
+c | 100.0% | 100.0% | 100.0% | 80.0% | 92.3% 
 d | 100.0% | nan% | nan% | nan% | 100.0% 
 s | 20.0% | nan% | 22.2% | 10.0% | 18.2% 
-overall | 55.1% | 85.7% | 54.7% | 54.0% | 56.2%
+overall | 55.2% | 81.8% | 55.1% | 53.5% | 56.0%
 
- baseline accuracy from rank alone: `63.1%`
+ baseline accuracy from rank alone: `62.8%`
 
- baseline accuracy from race alone: `56.2%`
+ baseline accuracy from race alone: `56.0%`
 
- race+rank baseline accuracy: `64.3%`
+ race+rank baseline accuracy: `64.9%`
 
-baseline accuracy from always picking higher mmr player:`66.2%`
+baseline accuracy from always picking higher mmr player:`66.1%`
 
 map/matchup winrates
 --------------------
 
 map | vs. p | vs. r | vs. t | vs. z
 ------|------|------|------|------
-eclipse | 42.4% | 80.0% | 61.5% | 59.3%
-largo | 69.4% | 100.0% | 42.9% | 58.8%
-polypoid | 59.3% | 80.0% | 61.1% | 58.5%
-goodnight | 59.1% | 100.0% | 42.1% | 33.3%
+eclipse | 42.4% | 80.0% | 63.0% | 58.6%
+largo | 69.4% | 100.0% | 43.8% | 58.8%
+polypoid | 60.0% | 72.7% | 61.1% | 57.1%
+goodnight | 58.3% | 100.0% | 42.1% | 33.3%
