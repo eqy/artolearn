@@ -44,7 +44,7 @@ def testcv(params):
     return error
 
 def testtv(params):
-    days = 5
+    days = 7
     print(f"loaded {len(dataset.dataframe)}")
     dfWindow = dataset.one_hot[dataset.one_hot['epochseconds'] > maxtime - (params['limit_days']*86400)]
     print(f"window {len(dfWindow)}")
@@ -110,7 +110,7 @@ def getobjective(cv=True, additional_drop=None, select_features=False, no_sessio
                   'eval_metric': 'error',
                   'verbosity': 0,
                   'num_boost_round': trial.suggest_int('num_boost_round', 10, 1000),
-                  'limit_days': trial.suggest_int('limit_days', 10, maxdays) if not cv else trial.suggest_int('limit_days', 10, maxdays),
+                  'limit_days': trial.suggest_int('limit_days', 12, maxdays),
                  }
         for column in columns:
             if select_features:
