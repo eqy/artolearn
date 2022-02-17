@@ -11,6 +11,19 @@ maxtime = max(dataset.one_hot['epochseconds'])
 mintime = min(dataset.one_hot['epochseconds'])
 maxdays = math.ceil((maxtime - mintime)/86400)
 
+best_loss = 1e12
+best_loss_error = 1.0
+best_error = 1.0
+
+def update(error, loss):
+    global best_loss, best_loss_error, best_error
+    if loss < best_loss:
+        best_loss = loss
+        best_loss_error = error
+    if error < best_error:
+        best_error = error
+    print(f"best loss {best_loss} best loss error {best_loss_error} best error {best_error}")
+
 def get_columns(dataset, additional_drop=None):
     always_dropped = ['outcome_victory', 'epochseconds', 'uptime']
     if additional_drop is not None:
@@ -38,10 +51,12 @@ def testcv(params):
     assert len(dfX) == len(dfY)
     d = xgb.DMatrix(dfX, label=dfY)
     print(dfX.columns)
-    result = xgb.cv(params, d, num_boost_round=params['num_boost_round'], nfold=10, shuffle=True)
+    result = xgb.cv(params, d, num_boost_round=params['num_boost_round'], nfold=10, shuffle=True, metrics=['error', 'logloss'])
     error = result['test-error-mean'][params['num_boost_round']-1]
-    print(error)
-    return error
+    loss = result['test-logloss-mean'][params['num_boost_round']-1]
+    print(error, loss)
+    update(error, loss)
+    return loss
 
 def testtv(params):
     days = 7
@@ -64,8 +79,10 @@ def testtv(params):
     print(dfXTrain.columns)
     result = xgb.train(params, dTrain, num_boost_round=params['num_boost_round'], evals=[(dTest, 'test')], evals_result=evals_result, verbose_eval=False)
     error = evals_result['test']['error'][-1]
-    print(error)
-    return error
+    loss = evals_result['test']['logloss'][-1]
+    print(error, loss)
+    update(error, loss)
+    return loss
 
 def train_final(params):
     dfTrain = dataset.one_hot
@@ -107,7 +124,7 @@ def getobjective(cv=True, additional_drop=None, select_features=False, no_sessio
                   'max_delta_step': trial.suggest_float('max_delta_step', 0, 10, step=0.25),
                   'subsample': trial.suggest_float('subsample', 0, 1, step=0.05),
                   'objective': 'binary:logistic',
-                  'eval_metric': 'error',
+                  'eval_metric': ['error', 'logloss'],
                   'verbosity': 0,
                   'num_boost_round': trial.suggest_int('num_boost_round', 10, 1000),
                   'limit_days': trial.suggest_int('limit_days', 12, maxdays),
@@ -126,8 +143,8 @@ def getobjective(cv=True, additional_drop=None, select_features=False, no_sessio
     return objective
 
 if __name__ == '__main__':
-    params = {'booster': 'gbtree', 'eval_metric': 'error', 'eta':0.3, 'max_depth':2, 'lambda':10}
+    params = {'booster': 'gbtree', 'eval_metric': ['error', 'logloss'], 'eta':0.3, 'max_depth':2, 'lambda':10}
     #print(get_columns())
     study = optuna.create_study(direction='minimize')
-    study.optimize(getobjective(True), n_trials=10000) 
-    ##study.optimize(getobjective(False), n_trials=1000)
+    #study.optimize(getobjective(True), n_trials=10000) 
+    study.optimize(getobjective(False), n_trials=1000)
