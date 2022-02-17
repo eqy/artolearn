@@ -28,34 +28,34 @@ The live inference CLI is provided by `infer.py`.
 
 Additional Fun Summary Statistics From Collected Data
 -----------------------------------------------------
-Auto-updated 2022-02-16 21:36:42 (466 games)
+Auto-updated 2022-02-16 21:36:42 (467 games)
 
 per-race+rank winrates
 ----------------------
 rank | vs. p | vs. r | vs. t | vs. z | overall
 ---- | ---- | ---- | ---- | ---- | ---- 
 unranked | 60.0% | 0.0% | 64.3% | 37.5% | 51.9% 
-a | 49.0% | 62.5% | 50.0% | 51.8% | 50.6% 
+a | 49.0% | 62.5% | 50.0% | 51.2% | 50.4% 
 b | 85.4% | 100.0% | 75.0% | 88.0% | 84.8% 
 c | 100.0% | 100.0% | 100.0% | 80.0% | 92.3% 
 d | 100.0% | nan% | nan% | nan% | 100.0% 
 s | 22.2% | nan% | 22.2% | 10.0% | 19.6% 
-overall | 55.6% | 78.3% | 56.6% | 54.7% | 56.7%
+overall | 55.6% | 78.3% | 56.6% | 54.3% | 56.5%
 
- baseline accuracy from rank alone: `62.7%`
+ baseline accuracy from rank alone: `62.5%`
 
- baseline accuracy from race alone: `56.7%`
+ baseline accuracy from race alone: `56.5%`
 
- race+rank baseline accuracy: `64.4%`
+ race+rank baseline accuracy: `64.2%`
 
-baseline accuracy from always picking higher mmr player:`65.5%`
+baseline accuracy from always picking higher mmr player:`65.6%`
 
 map/matchup winrates
 --------------------
 
 map | vs. p | vs. r | vs. t | vs. z
 ------|------|------|------|------
-eclipse | 45.2% | 80.0% | 63.3% | 58.8%
+eclipse | 45.2% | 80.0% | 63.3% | 57.1%
 largo | 68.4% | 100.0% | 50.0% | 61.1%
 polypoid | 59.7% | 66.7% | 60.5% | 59.1%
 goodnight | 56.0% | 100.0% | 45.0% | 32.0%
