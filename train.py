@@ -45,7 +45,8 @@ def testcv(params):
     print(f"loaded {len(dataset.dataframe)}")
     dfWindow = dataset.one_hot[dataset.one_hot['epochseconds'] > maxtime - (params['limit_days']*86400)]
     print(f"window {len(dfWindow)}")
-    assert len(dfWindow)
+    if not len(dfWindow):
+        return 1e12
     dfX = select_features(dfWindow.drop('outcome_victory', axis=1), params)
     dfY = dfWindow['outcome_victory']
     assert len(dfX) == len(dfY)
@@ -59,13 +60,14 @@ def testcv(params):
     return loss
 
 def testtv(params):
-    days = 7
+    days = 5
     print(f"loaded {len(dataset.dataframe)}")
     dfWindow = dataset.one_hot[dataset.one_hot['epochseconds'] > maxtime - (params['limit_days']*86400)]
     print(f"window {len(dfWindow)}")
     dfTrain = dfWindow[dfWindow['epochseconds'] < maxtime - (days*86400)]
     dfTest = dfWindow[dfWindow['epochseconds'] >= maxtime - (days*86400)]
-    assert len(dfTrain) and len(dfTest), f"NO TRAIN OR TEST? limit days: {params['limit_days']}"
+    if not (len(dfTrain) and len(dfTest)):
+        return 1e12
     assert len(dfTrain) + len(dfTest) == len(dfWindow)
     dfXTrain = select_features(dfTrain.drop('outcome_victory', axis=1), params)
     dfYTrain = dfTrain['outcome_victory']
@@ -127,7 +129,7 @@ def getobjective(cv=True, additional_drop=None, select_features=False, no_sessio
                   'eval_metric': ['error', 'logloss'],
                   'verbosity': 0,
                   'num_boost_round': trial.suggest_int('num_boost_round', 10, 1000),
-                  'limit_days': trial.suggest_int('limit_days', 12, maxdays),
+                  'limit_days': trial.suggest_int('limit_days', 14, maxdays),
                  }
         for column in columns:
             if select_features:
