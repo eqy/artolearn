@@ -10,11 +10,11 @@ import train
 
 def main():
     parser = argparse.ArgumentParser()
-    ## parser.add_argument('--artommr', type=float, help='artosis mmr', default=0)
+    parser.add_argument('--artommr', type=float, help='artosis mmr', default=0)
     parser.add_argument('--oppommr', type=float, help='opponent mmr', default=0)
     # parser.add_argument('--artorace', type=str, help='artosis race', default='t')
     parser.add_argument('--opporace', type=str, help='opponent race', required=True)
-    # parser.add_argument('--artorank', type=str, help='artosis rank', default='')
+    parser.add_argument('--artorank', type=str, help='artosis rank', default='')
     parser.add_argument('--opporank', type=str, help='opponent rank', default='')
     # parser.add_argument('--opponame', type=str, help='opponent name', default='')
     parser.add_argument('--history', type=str, help="match history e.g., zwpltw", default='')
@@ -24,15 +24,15 @@ def main():
     # parser.add_argument('--uptime', type=float, required=True)
     
     args = parser.parse_args()
-    #if args.artommr > 1800:
-    #    assert len(args.artorank)
+    if args.artommr > 1800:
+        assert len(args.artorank)
     if args.oppommr > 1800:
         assert len(args.opporank)
     #assert args.artorace in 'ptzr', "unknown artosis race"
     assert args.opporace in 'ptzr', "unknown opponent race"
     #if args.artorace != 't':
     #    print("WARNING: artosis race not terran, are you sure?")
-    #assert args.artommr < 3000
+    assert args.artommr < 3000
     assert args.oppommr < 3000
    
     map_values = set()
@@ -42,7 +42,7 @@ def main():
     assert args.map in map_values, "unknown map"
 
     inp = [time.time(),
-            'artosis', None, None, 't',
+            'artosis', args.artorank, args.artommr, 't',
             'opponentnameplaceholder', args.opporank, args.oppommr, args.opporace,
             args.map, args.turnrate, args.latency, 0, 'defeat']
     assert len(args.history) % 2 == 0
