@@ -545,6 +545,12 @@ class ReferenceFrames(object):
         player_b_race = player_b_race[0]
         return player_a_race, player_b_race
 
+class CustomBar(Bar):
+    suffix = "%(percent)d%% %(remain)ds"
+    @property
+    def remain(self):
+        return self.elapsed/(self.progress+1e-12)
+
 class Video(object):
     def __init__(self, filepath, video_parser):
         self.filepath = filepath
@@ -560,7 +566,7 @@ class Video(object):
 
     def parse(self):
         frame_num = 0
-        progressbar = Bar('Parsing', max=self.frame_count)
+        progressbar = CustomBar('Parsing', max=self.frame_count)
         while self.cap.isOpened():
             if frame_num >= self.frame_count:
                 break
