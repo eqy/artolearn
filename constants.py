@@ -29,7 +29,9 @@ NAME_PATTERNS = {'artosis': 'artosis',
                  'bsl14-2': 'artosis',
                  'bsl14-3': 'artosis', 
                  'asdsaasdads': 'artosis',
-                 'adsthrght': 'artosis'}
+                 'adsthrght': 'artosis',
+                 'asdasdasdas2312': 'artosis',
+                 'asdasdasdas': 'artosis'}
 
 MAP_PATTERNS = {'polypoid': 'polypoid',
                 'potypoid': 'polypoid',
@@ -40,4 +42,5 @@ MAP_PATTERNS = {'polypoid': 'polypoid',
                 'good': 'goodnight',
                 'largo': 'largo',
                 'larg': 'largo',
-                'ood night': 'goodnight'}
+                'ood night': 'goodnight',
+                'revolver': 'revolver'}
